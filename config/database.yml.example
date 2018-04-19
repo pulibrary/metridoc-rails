@@ -1,0 +1,11 @@
+default: &default
+  adapter: mysql2
+  username: root
+
+development:
+  <<: *default
+  database: metridoc_development
+
+test:
+  <<: *default
+  database: metridoc_test
