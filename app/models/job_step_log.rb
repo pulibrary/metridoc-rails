@@ -1,0 +1,3 @@
+class JobStepLog < ApplicationRecord
+
+end

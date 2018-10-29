@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180923204607) do
+ActiveRecord::Schema.define(version: 20181029133943) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -103,25 +103,9 @@ ActiveRecord::Schema.define(version: 20180923204607) do
     t.integer "library_id"
   end
 
-  create_table "borrowdirect_report_distribution_tmps", force: :cascade do |t|
-    t.string "email_addr", limit: 32, null: false
-    t.integer "institution_id", null: false
-    t.bigint "bd_report_distribution_tmp_id", null: false
-    t.bigint "version", null: false
-    t.string "library_id", limit: 255, null: false
-  end
-
-  create_table "borrowdirect_report_distributions", force: :cascade do |t|
-    t.string "email_addr", limit: 32, null: false
-    t.integer "institution_id", null: false
-    t.bigint "bd_report_distribution_id", null: false
-    t.bigint "version", null: false
-    t.string "library_id", limit: 255, null: false
-  end
-
   create_table "borrowdirect_ship_dates", force: :cascade do |t|
     t.string "request_number", limit: 12
-    t.datetime "ship_date", null: false
+    t.string "ship_date", limit: 24, null: false
     t.string "exception_code", limit: 3
     t.datetime "process_date"
   end
@@ -188,14 +172,6 @@ ActiveRecord::Schema.define(version: 20180923204607) do
     t.integer "library_id"
   end
 
-  create_table "ezborrow_report_distributions", force: :cascade do |t|
-    t.string "email_addr", limit: 32, null: false
-    t.integer "institution_id", null: false
-    t.bigint "ezb_report_distribution_id", null: false
-    t.bigint "version", null: false
-    t.string "library_id", limit: 255, null: false
-  end
-
   create_table "ezborrow_ship_dates", force: :cascade do |t|
     t.string "request_number", limit: 12
     t.datetime "ship_date"
@@ -212,6 +188,22 @@ ActiveRecord::Schema.define(version: 20180923204607) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["institution_id"], name: "index_illiad_borrowings_on_institution_id"
+  end
+
+  create_table "illiad_caches", force: :cascade do |t|
+    t.bigint "institution_id", null: false
+    t.datetime "date_created", null: false
+    t.text "json_data", null: false
+    t.datetime "last_updated", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["institution_id"], name: "index_illiad_caches_on_institution_id"
+  end
+
+  create_table "illiad_fiscal_start_months", force: :cascade do |t|
+    t.bigint "ill_fiscal_start_month_id", null: false
+    t.bigint "version", null: false
+    t.integer "month", null: false
   end
 
   create_table "illiad_groups", force: :cascade do |t|
@@ -266,6 +258,15 @@ ActiveRecord::Schema.define(version: 20180923204607) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["institution_id"], name: "index_illiad_lendings_on_institution_id"
+  end
+
+  create_table "illiad_locations", force: :cascade do |t|
+    t.bigint "institution_id", null: false
+    t.string "abbrev", limit: 255, null: false
+    t.string "location", limit: 255, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["institution_id"], name: "index_illiad_locations_on_institution_id"
   end
 
   create_table "illiad_reference_numbers", force: :cascade do |t|
@@ -356,6 +357,23 @@ ActiveRecord::Schema.define(version: 20180923204607) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "job_logs", force: :cascade do |t|
+    t.string "job_name", null: false
+    t.string "environment", null: false
+    t.string "mac_address", null: false
+    t.datetime "started_at", null: false
+    t.datetime "ended_at"
+    t.string "status", null: false
+  end
+
+  create_table "job_step_log", force: :cascade do |t|
+    t.bigint "job_log_id", null: false
+    t.string "step", null: false
+    t.datetime "log_date", null: false
+    t.text "log_text", null: false
+    t.index ["job_log_id"], name: "index_job_step_log_on_job_log_id"
   end
 
   create_table "keyserver_audits", force: :cascade do |t|
