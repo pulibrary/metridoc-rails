@@ -1,13 +1,22 @@
 load_sequence:         3
-target_model:          "Illiad::LenderInfo"
-truncate_before_load:  "yes"
-filter:                ""
+adapter:               csv
+# Source Config
 select_distinct:       true
-# select_sql:            "LenderString, LibraryName, loanbillingcategory, address1+'; '+address2+'; '+address3+'; '+address4 AS address"
 source_table:          "LenderAddressesALL"
-# unique_column:
 column_mappings:
   LenderString:         lender_code
   LibraryName:          library_name
   LoanBillingCategory:  billing_category
-  "address1+'; '+address2+'; '+address3+'; '+address4 ": address
+  Address1:             address1
+  Address2:             address2
+  Address3:             address3
+  Address4:             address4
+# Target Config
+target_model:          "Illiad::LenderInfo"
+truncate_before_load:  "yes"
+target_mappings:
+  lender_code: lender_code
+  library_name: library_name
+  billing_category: billing_category
+  address: "%{address1}; %{address2}; %{address3}; %{address4};"
+batch_size:            10000
