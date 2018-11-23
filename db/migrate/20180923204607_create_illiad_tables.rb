@@ -4,6 +4,7 @@ class CreateIlliadTables < ActiveRecord::Migration[5.1]
     create_table :institutions do |t|
       t.string :name, null: false
       t.string :code, null: false
+      t.string :zip_code
       t.timestamps null: false
     end
 
@@ -37,6 +38,8 @@ class CreateIlliadTables < ActiveRecord::Migration[5.1]
       t.string :billing_category , limit: 255
       t.string :lender_code , limit: 255, null: false
       t.string :library_name , limit: 255
+      t.integer :address_number
+      t.string  :nvtgc , limit: 255
       t.timestamps null: false
     end
 
@@ -122,6 +125,8 @@ class CreateIlliadTables < ActiveRecord::Migration[5.1]
       t.integer :user_name , limit: 8
       t.string :borrower_nvtgc , limit: 255
       t.string :original_nvtgc , limit: 255
+      t.datetime :creation_date
+      t.integer :lender_address_number
       t.timestamps null: false
     end
 
