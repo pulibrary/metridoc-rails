@@ -25,6 +25,9 @@ module Export
       end
 
       def execute(sequences_only = [])
+        log_job_execution
+        return #TODO testing
+
         task_files(sequences_only).each do |task_file|
           t = Task.new(self, task_file)
           next unless t.source_adapter == 'mssql'
@@ -76,6 +79,47 @@ module Export
                     adapter:  'sqlserver',
                     pool:     5,
                     timeout:  120000 }
+      end
+
+      def mac_address
+        platform = RUBY_PLATFORM.downcase
+        output = `#{(platform =~ /win32/) ? 'ipconfig /all' : 'ifconfig'}`
+        case platform
+          when /darwin/
+            $1 if output =~ /en1.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im
+          when /win32/
+            $1 if output =~ /Physical Address.*?(([A-F0-9]{2}-){5}[A-F0-9]{2})/im
+          # Cases for other platforms...
+          else nil
+        end
+      end
+
+      def log_job_execution
+        return @log_job_execution if @log_job_execution.present?
+
+        environment = ENV['RACK_ENV'] || 'development'
+        dbconfig = YAML.load(File.read(File.join(root_path, 'config', 'database.yml')))
+
+        klass = Object.const_set("LogJobExecution", Class.new(ActiveRecord::Base))
+        klass.table_name = "log_job_executions"
+        klass.establish_connection dbconfig[environment]
+
+        global_yml = global_config
+        global_yml["username"] = "***"
+        global_yml["password"] = "***"
+
+        log_job_execution = klass.new
+        log_job_execution.source_name = folder
+        log_job_execution.job_type = 'import'
+        log_job_execution.global_yml = global_yml
+        log_job_execution.mac_address = mac_address
+        log_job_execution.started_at = Time.now
+        log_job_execution.status = 'running'
+        log_job_execution.save!
+
+        @log_job_execution = log_job_execution
+
+        return @log_job_execution
       end
 
     end
