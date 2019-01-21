@@ -40,6 +40,8 @@ module Import
         end
 
         move_source_files if move_to_folder.present?
+
+        return true
       end
 
       def move_source_files
@@ -79,7 +81,7 @@ module Import
           global_params = YAML.load(ERB.new(File.read(yml_path)).result)
         end
 
-        @global_params = @options.stringify_keys.merge(global_params)
+        @global_params = global_params.merge(@options.stringify_keys)
       end
 
       def institution_id
