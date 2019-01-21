@@ -30,9 +30,6 @@ gem 'jbuilder', '~> 2.5'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'tiny_tds', '~> 2.1.0'
-gem 'activerecord-sqlserver-adapter', '~> 5.1.0'
-
 gem 'pg'
 gem 'mysql2'
 
@@ -42,8 +39,16 @@ gem 'devise'
 gem 'activeadmin'
 gem 'haml'
 
-gem 'dotenv-rails', groups: [:development, :test]
+gem 'active_material', github: 'vigetlabs/active_material'
+gem 'active_admin_sidebar'
 
+gem 'chartkick'
+gem 'active_median'
+gem 'groupdate'
+
+gem 'chronic'
+
+gem 'dotenv-rails', groups: [:development, :test]
 group :development, :test do
   gem 'pry'
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
@@ -60,7 +65,12 @@ group :development do
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
   gem 'spring-watcher-listen', '~> 2.0.0'
+
+  #tiny_tds and activerecord-sqlserver-adapter gems are needed by only import_helper.rb, which is not really part of the app, it is more for diagnosing/troubleshooting sql server sources
+  gem 'tiny_tds', '~> 2.1.0'
+  gem 'activerecord-sqlserver-adapter', '~> 5.1.0'
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+# Some versions of Ubuntu also requires this gem
+gem 'tzinfo-data'
