@@ -7,17 +7,17 @@ class LoggingTables < ActiveRecord::Migration[5.1]
       t.string   :mac_address
       t.json     :global_yml, null: false
       t.datetime :started_at, null: false
-      t.datetime :ended_at
+      t.datetime :status_set_at, null: false
       t.string   :status, null: false
       t.text     :log_text
     end
 
     create_table :log_job_execution_steps do |t|
-      t.belongs_to :log_job_execution, null: false
+      t.belongs_to :job_execution, null: false
       t.string     :step_name, null: false
       t.json       :step_yml, null: false
       t.datetime   :started_at, null: false
-      t.datetime   :ended_at
+      t.datetime   :status_set_at, null: false
       t.string     :status, null: false
       t.text       :log_text
     end
