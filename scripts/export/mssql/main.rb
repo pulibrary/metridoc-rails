@@ -25,9 +25,6 @@ module Export
       end
 
       def execute(sequences_only = [])
-        log_job_execution
-        return #TODO testing
-
         task_files(sequences_only).each do |task_file|
           t = Task.new(self, task_file)
           next unless t.source_adapter == 'mssql'
@@ -109,8 +106,8 @@ module Export
         global_yml["password"] = "***"
 
         log_job_execution = klass.new
-        log_job_execution.source_name = folder
-        log_job_execution.job_type = 'import'
+        log_job_execution.source_name = config_folder
+        log_job_execution.job_type = 'export'
         log_job_execution.global_yml = global_yml
         log_job_execution.mac_address = mac_address
         log_job_execution.started_at = Time.now
@@ -118,8 +115,6 @@ module Export
         log_job_execution.save!
 
         @log_job_execution = log_job_execution
-
-        return @log_job_execution
       end
 
     end

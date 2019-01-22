@@ -34,13 +34,22 @@ module Import
       end
 
       def execute(sequences_only = [])
+        log_job_execution
+
         task_files(sequences_only).each do |task_file|
           t = Task.new(self, task_file, test_mode?)
-          return false unless t.execute
+          log("Started executing step [#{task_file}]")
+          unless t.execute
+            log("Failed executing step [#{task_file}]")
+            log_job_execution.set_status!('failed')
+            return false
+          end
+          log("Ended executing step [#{task_file}]")
         end
 
         move_source_files if move_to_folder.present?
 
+        log_job_execution.set_status!('successful')
         return true
       end
 
@@ -87,7 +96,37 @@ module Import
       def institution_id
         return @institution_id if @institution_id.present?
         @institution_id = Institution.get_id_from_code(global_config["institution_code"])
-        raise "Institution not found in database for [#{ global_config["institution_code"] }]." if @institution_id.blank?
+        if @institution_id.blank?
+          msg  = "Institution not found in database for [#{ global_config["institution_code"] }]."
+          log(msg)
+          log_job_execution.set_status!('failed')
+          raise msg
+        end
+      end
+
+      def log_job_execution
+        return @log_job_execution if @log_job_execution.present?
+
+        global_yml = global_config
+        global_yml["username"] = "***"
+        global_yml["password"] = "***"
+
+        log_job_execution = Log::JobExecution.new
+        log_job_execution.source_name = config_folder
+        log_job_execution.job_type = 'import'
+        log_job_execution.global_yml = global_yml
+        log_job_execution.mac_address = ApplicationHelper.mac_address
+        log_job_execution.started_at = Time.now
+        log_job_execution.status = 'running'
+        log_job_execution.save!
+
+        @log_job_execution = log_job_execution
+      end
+
+      def log(m)
+        log = "#{Time.now} - #{m}"
+        log_job_execution.log_line(log)
+        puts log
       end
 
     end
