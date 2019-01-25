@@ -17,4 +17,5 @@ class AdminUser < ApplicationRecord
       xml.tag!(:updated_at, updated_at)
     end
   end
+
 end
