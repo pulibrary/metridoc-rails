@@ -1,3 +1,5 @@
+require '../../../app/models/log/job_execution.rb'
+
 module Export
   module Mssql
 
@@ -25,12 +27,21 @@ module Export
       end
 
       def execute(sequences_only = [])
+        @log_job_execution = log_job_execution
+
         task_files(sequences_only).each do |task_file|
           t = Task.new(self, task_file)
           next unless t.source_adapter == 'mssql'
-          return false unless t.execute
+          log("Started executing step [#{task_file}]")
+          unless t.execute
+            log("Failed executing step [#{task_file}]")
+            log_job_execution.set_status!('failed')
+            return false
+          end
+          log("Ended executing step [#{task_file}]")
         end
 
+        log_job_execution.set_status!('successful')
         return true
       end
 
@@ -86,6 +97,8 @@ module Export
             $1 if output =~ /en1.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im
           when /win32/
             $1 if output =~ /Physical Address.*?(([A-F0-9]{2}-){5}[A-F0-9]{2})/im
+          when /linux/
+            $1 if output =~ /ether\s+(([A-F0-9]{2}:){5}[A-F0-9]{2})/im
           # Cases for other platforms...
           else nil
         end
@@ -94,30 +107,34 @@ module Export
       def log_job_execution
         return @log_job_execution if @log_job_execution.present?
 
-        environment = ENV['RACK_ENV'] || 'development'
+        environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
         dbconfig = YAML.load(File.read(File.join(root_path, 'config', 'database.yml')))
 
-        klass = Object.const_set("LogJobExecution", Class.new(ActiveRecord::Base))
-        klass.table_name = "log_job_executions"
-        klass.establish_connection dbconfig[environment]
+        Log::JobExecution.establish_connection dbconfig[environment]
 
         global_yml = global_config
         global_yml["username"] = "***"
         global_yml["password"] = "***"
 
-        log_job_execution = klass.new
-        log_job_execution.source_name = config_folder
-        log_job_execution.job_type = 'export'
-        log_job_execution.global_yml = global_yml
-        log_job_execution.mac_address = mac_address
-        log_job_execution.started_at = Time.now
-        log_job_execution.status = 'running'
-        log_job_execution.save!
+        @log_job_execution = Log::JobExecution.create!(
+                                                        source_name: config_folder,
+                                                        job_type: 'export',
+                                                        global_yml: global_yml,
+                                                        mac_address: mac_address,
+                                                        started_at: Time.now,
+                                                        status: 'running'
+                                                      )
+      end
 
-        @log_job_execution = log_job_execution
+      def log(m)
+        log = "#{Time.now} - #{m}"
+        log_job_execution.log_line(log)
+        puts log
       end
 
     end
 
   end
 end
+
+

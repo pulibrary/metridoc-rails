@@ -1,3 +1,4 @@
+require '../../../app/models/log/job_execution_step.rb'
 require "csv"
 
 module Export
@@ -78,33 +79,60 @@ module Export
       end
 
       def execute
-        log "Started exporting #{import_model_name}"
+        log_job_execution_step
 
-        FileUtils.mkdir_p task_config["export_folder"]
+        # FileUtils.mkdir_p task_config["export_folder"]
+        #
+        # csv_file_path = File.join(task_config["export_folder"], task_config["export_file_name"].downcase)
+        #
+        # CSV.open(csv_file_path, "wb") do |csv|
+        #   csv << column_mappings.map{|k,v| v}
+        #
+        #   data.each_with_index do |obj, i|
+        #     csv << column_mappings.each_with_index.map { |(k, v), i| obj.send(v) }
+        #     break if test_mode? && i >= 100
+        #     puts "Processed #{i} records" if i > 0 && i % 10000 == 0
+        #   end
+        #
+        # end # CSV.open
 
-        csv_file_path = File.join(task_config["export_folder"], task_config["export_file_name"].downcase)
-
-        CSV.open(csv_file_path, "wb") do |csv|
-          csv << column_mappings.map{|k,v| v}
-
-          data.each_with_index do |obj, i|
-            csv << column_mappings.each_with_index.map { |(k, v), i| obj.send(v) }
-            break if test_mode? && i >= 100
-            puts "Processed #{i} records" if i > 0 && i % 10000 == 0
-          end
-
-        end # CSV.open
-
-        log "Ended exporting #{import_model_name}"
+        log_job_execution_step.set_status!("successful")
         return true
+
+        rescue => ex
+        log "Error => [#{ex.message}]"
+        log_job_execution_step.set_status!("failed")
+        return false
       end
 
       def column_mappings
         task_config['column_mappings']
       end
 
+      def log_job_execution_step
+        return @log_job_execution_step if @log_job_execution_step.present?
+
+        environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
+        dbconfig = YAML.load(File.read(File.join(@main_driver.root_path, 'config', 'database.yml')))
+        Log::JobExecutionStep.establish_connection dbconfig[environment]
+
+        step_yml = task_config
+        step_yml["username"] = "***"
+        step_yml["password"] = "***"
+
+        @log_job_execution_step = Log::JobExecutionStep.create!(
+                                                          job_execution_id: @main_driver.log_job_execution.id,
+                                                          step_name: task_config["load_sequence"],
+                                                          step_yml: step_yml,
+                                                          started_at: Time.now,
+                                                          status: 'running'
+                                                    )
+      end
+
       def log(m)
-        puts "#{Time.now} - #{m}"
+        log = "#{Time.now} - #{m}"
+        log_job_execution_step.log_line(log)
+        puts log
       end
 
     end # class Task
