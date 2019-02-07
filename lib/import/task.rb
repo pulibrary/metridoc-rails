@@ -20,15 +20,12 @@ module Import
         step_yml["username"] = "***"
         step_yml["password"] = "***"
 
-        log_job_execution_step = log_job_execution.job_execution_steps.new
-
-        log_job_execution_step.step_name = task_config["load_sequence"]
-        log_job_execution_step.step_yml = step_yml
-        log_job_execution_step.started_at = Time.now
-        log_job_execution_step.status = 'running'
-        log_job_execution_step.save!
-
-        @log_job_execution_step = log_job_execution_step
+        @log_job_execution_step = log_job_execution.job_execution_steps.create!(
+                                                          step_name: task_config["load_sequence"],
+                                                          step_yml: step_yml,
+                                                          started_at: Time.now,
+                                                          status: 'running'
+                                                    )
       end
 
       def global_config
@@ -91,6 +88,11 @@ module Import
         end
 
         return return_value
+
+        rescue => ex
+        log "Error => [#{ex.message}]"
+        log_job_execution_step.set_status!("failed")
+        return false
       end
 
       def batch_size
