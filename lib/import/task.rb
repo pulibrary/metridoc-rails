@@ -16,13 +16,9 @@ module Import
       def log_job_execution_step
         return @log_job_execution_step if @log_job_execution_step.present?
 
-        step_yml = task_config
-        step_yml["username"] = "***"
-        step_yml["password"] = "***"
-
         @log_job_execution_step = log_job_execution.job_execution_steps.create!(
                                                           step_name: task_config["load_sequence"],
-                                                          step_yml: step_yml,
+                                                          step_yml: task_config,
                                                           started_at: Time.now,
                                                           status: 'running'
                                                     )

@@ -18,6 +18,7 @@ module Log
     private
     def set_defaults
       self.status_set_at = Time.now if status_changed?
+      step_yml.map{|key, val| step_yml[key] = ( key.match(/password/i) ? "[FILTERED]" : val) }
     end
   end
 

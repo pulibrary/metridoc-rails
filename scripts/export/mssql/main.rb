@@ -1,4 +1,5 @@
 require '../../../app/models/log/job_execution.rb'
+require '../../../app/helpers/application_helper.rb'
 
 module Export
   module Mssql
@@ -89,21 +90,6 @@ module Export
                     timeout:  120000 }
       end
 
-      def mac_address
-        platform = RUBY_PLATFORM.downcase
-        output = `#{(platform =~ /win32/) ? 'ipconfig /all' : 'ifconfig'}`
-        case platform
-          when /darwin/
-            $1 if output =~ /en1.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im
-          when /win32/
-            $1 if output =~ /Physical Address.*?(([A-F0-9]{2}-){5}[A-F0-9]{2})/im
-          when /linux/
-            $1 if output =~ /ether\s+(([A-F0-9]{2}:){5}[A-F0-9]{2})/im
-          # Cases for other platforms...
-          else nil
-        end
-      end
-
       def log_job_execution
         return @log_job_execution if @log_job_execution.present?
 
@@ -112,15 +98,11 @@ module Export
 
         Log::JobExecution.establish_connection dbconfig[environment]
 
-        global_yml = global_config
-        global_yml["username"] = "***"
-        global_yml["password"] = "***"
-
         @log_job_execution = Log::JobExecution.create!(
                                                         source_name: config_folder,
                                                         job_type: 'export',
-                                                        global_yml: global_yml,
-                                                        mac_address: mac_address,
+                                                        global_yml: global_config,
+                                                        mac_address: ApplicationHelper.mac_address,
                                                         started_at: Time.now,
                                                         status: 'running'
                                                       )
