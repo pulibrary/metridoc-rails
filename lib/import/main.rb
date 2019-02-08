@@ -107,20 +107,14 @@ module Import
       def log_job_execution
         return @log_job_execution if @log_job_execution.present?
 
-        global_yml = global_config
-        global_yml["username"] = "***"
-        global_yml["password"] = "***"
-
-        log_job_execution = Log::JobExecution.new
-        log_job_execution.source_name = config_folder
-        log_job_execution.job_type = 'import'
-        log_job_execution.global_yml = global_yml
-        log_job_execution.mac_address = ApplicationHelper.mac_address
-        log_job_execution.started_at = Time.now
-        log_job_execution.status = 'running'
-        log_job_execution.save!
-
-        @log_job_execution = log_job_execution
+        @log_job_execution = Log::JobExecution.create!(
+                                                        source_name: config_folder,
+                                                        job_type: 'import',
+                                                        global_yml: global_config,
+                                                        mac_address: ApplicationHelper.mac_address,
+                                                        started_at: Time.now,
+                                                        status: 'running'
+                                                      )
       end
 
       def log(m)

@@ -4,6 +4,7 @@ require 'bundler/setup'
 require 'optparse'
 Bundler.require(:default)
 
+# hack to get the activerecord 4.1.2 work with Ruby 2.5.1
 module Arel
   module Visitors
     class DepthFirst < Arel::Visitors::Visitor

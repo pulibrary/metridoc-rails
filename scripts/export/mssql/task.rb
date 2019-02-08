@@ -116,14 +116,10 @@ module Export
         dbconfig = YAML.load(File.read(File.join(@main_driver.root_path, 'config', 'database.yml')))
         Log::JobExecutionStep.establish_connection dbconfig[environment]
 
-        step_yml = task_config
-        step_yml["username"] = "***"
-        step_yml["password"] = "***"
-
         @log_job_execution_step = Log::JobExecutionStep.create!(
                                                           job_execution_id: @main_driver.log_job_execution.id,
                                                           step_name: task_config["load_sequence"],
-                                                          step_yml: step_yml,
+                                                          step_yml: task_config,
                                                           started_at: Time.now,
                                                           status: 'running'
                                                     )
