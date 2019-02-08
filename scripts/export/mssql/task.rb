@@ -81,20 +81,20 @@ module Export
       def execute
         log_job_execution_step
 
-        # FileUtils.mkdir_p task_config["export_folder"]
-        #
-        # csv_file_path = File.join(task_config["export_folder"], task_config["export_file_name"].downcase)
-        #
-        # CSV.open(csv_file_path, "wb") do |csv|
-        #   csv << column_mappings.map{|k,v| v}
-        #
-        #   data.each_with_index do |obj, i|
-        #     csv << column_mappings.each_with_index.map { |(k, v), i| obj.send(v) }
-        #     break if test_mode? && i >= 100
-        #     puts "Processed #{i} records" if i > 0 && i % 10000 == 0
-        #   end
-        #
-        # end # CSV.open
+        FileUtils.mkdir_p task_config["export_folder"]
+
+        csv_file_path = File.join(task_config["export_folder"], task_config["export_file_name"].downcase)
+
+        CSV.open(csv_file_path, "wb") do |csv|
+          csv << column_mappings.map{|k,v| v}
+
+          data.each_with_index do |obj, i|
+            csv << column_mappings.each_with_index.map { |(k, v), i| obj.send(v) }
+            break if test_mode? && i >= 100
+            puts "Processed #{i} records" if i > 0 && i % 10000 == 0
+          end
+
+        end # CSV.open
 
         log_job_execution_step.set_status!("successful")
         return true
