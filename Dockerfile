@@ -27,7 +27,12 @@ RUN bundle install
 
 COPY --chown=app:app . .
 
-RUN RAILS_ENV=production SECRET_KEY_BASE=x bundle exec rake assets:precompile
+# Asset precompilation can be skipped for development by setting the
+# SKIP_ASSET_PRECOMPILATION build arg
+ARG SKIP_ASSET_PRECOMPILATION
+RUN if [ -z "$SKIP_ASSET_PRECOMPILATION" ]; then \
+      RAILS_ENV=production SECRET_KEY_BASE=x bundle exec rake assets:precompile; \
+    fi
 
 USER root
 
