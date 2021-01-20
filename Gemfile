@@ -79,6 +79,8 @@ group :development do
   gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
   gem 'rails_db'
   gem "letter_opener"
+  gem "capistrano", "~> 3.10", require: false
+  gem "capistrano-rails", "~> 1.6", require: false
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

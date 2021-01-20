@@ -1,0 +1,27 @@
+default: &default
+  adapter: postgresql
+
+development:
+  <<: *default
+  database: metridoc_development_2
+  username: colec
+  host: localhost
+
+test:
+  <<: *default
+  database: metridoc_test
+  username: colec
+
+staging:
+  <<: *default
+  database: <%= ENV["APP_DB"] %>
+  username: <%= ENV["APP_DB_USERNAME"] %>
+  host: <%= ENV["APP_DB_HOST" %>
+  password: <%= ENV["APP_DB_PASSWORD"] %>
+
+production:
+  <<: *default
+  database: <%= ENV["APP_DB"] %>
+  username: <%= ENV["APP_DB_USERNAME"] %>
+  host: <%= ENV["APP_DB_HOST" %>
+  password: <%= ENV["APP_DB_PASSWORD"] %>
