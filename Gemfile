@@ -54,6 +54,11 @@ gem 'daemons'
 
 gem 'dotenv-rails'
 
+  gem 'tiny_tds', '~> 2.1.0'
+  gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
+  gem 'rails_db'
+  gem "letter_opener"
+
 group :development, :test do
   gem 'rb-readline'
   gem 'pry'
@@ -75,10 +80,6 @@ group :development do
   gem 'spring-watcher-listen', '~> 2.0.0'
 
   #tiny_tds and activerecord-sqlserver-adapter gems are needed by only import_helper.rb, which is not really part of the app, it is more for diagnosing/troubleshooting sql server sources
-  gem 'tiny_tds', '~> 2.1.0'
-  gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
-  gem 'rails_db'
-  gem "letter_opener"
   gem "capistrano", "~> 3.10", require: false
   gem "capistrano-rails", "~> 1.6", require: false
 end
