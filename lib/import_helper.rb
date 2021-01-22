@@ -298,7 +298,7 @@ module ImportHelper
 
       connection.close
 
-      app_db = YAML.load_file(File.join(Rails.root, "config", "database.yml"))[Rails.env.to_s] 
+      app_db = YAML.load_file(ERB.new(File.join(Rails.root, "config", "database.yml")).result)[Rails.env.to_s] 
       connection = ActiveRecord::Base.establish_connection(app_db).connection
 
       class_name = "#{namespace.classify}::#{table_name[prefix.length..-1].singularize.classify}".constantize
