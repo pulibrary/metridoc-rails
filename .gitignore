@@ -42,8 +42,3 @@
 # Ignore Mac directory meta files
 .DS_Store
 
-# Ignore local secrets.yml file
-/config/secrets.yml
-
-# Ignore local database.yml file
-/config/database.yml

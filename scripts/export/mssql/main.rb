@@ -94,7 +94,7 @@ module Export
         return @log_job_execution if @log_job_execution.present?
 
         environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
-        dbconfig = YAML.load(File.read(File.join(root_path, 'config', 'database.yml')))
+        dbconfig = YAML.load(ERB.new(File.read(File.join(root_path, 'config', 'database.yml'))).result)
 
         Log::JobExecution.establish_connection dbconfig[environment]
 

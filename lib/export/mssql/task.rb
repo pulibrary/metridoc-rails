@@ -64,7 +64,7 @@ module Export
         end
 
         environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
-        dbconfig = YAML.load(File.read(File.join(@main_driver.root_path, 'config', 'database.yml')))
+        dbconfig = YAML.load(ERB.new(File.read(File.join(@main_driver.root_path, 'config', 'database.yml'))).result)
         Bookkeeping::DataLoad.establish_connection(dbconfig[environment])
         table = Bookkeeping::DataLoad.find_by(:table_name => task_config['config_folder'])
 
@@ -84,7 +84,7 @@ module Export
 
         if export_filter_date_range_sql.present?
           validate_range_request('to', earliest, nil) unless earliest.nil?
-          scope = scope.where(export_filter_date_range_sql, from_date || Date.today - 1.years, to_date || earliest)
+          scope = scope.where(export_filter_date_range_sql, from_date || Date.today - 1.years, to_date || earliest || Date.today)
         end
 
         if group_by_columns.present?
@@ -176,7 +176,7 @@ module Export
         return @log_job_execution_step if @log_job_execution_step.present?
 
         environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
-        dbconfig = YAML.load(File.read(File.join(@main_driver.root_path, 'config', 'database.yml')))
+        dbconfig = YAML.load(ERB.new(File.read(File.join(@main_driver.root_path, 'config', 'database.yml'))).result)
         Log::JobExecutionStep.establish_connection dbconfig[environment]
 
         @log_job_execution_step = Log::JobExecutionStep.create!(
