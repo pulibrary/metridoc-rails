@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_01_05_161135) do
+ActiveRecord::Schema.define(version: 2021_01_25_124750) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -231,6 +231,17 @@ ActiveRecord::Schema.define(version: 2021_01_05_161135) do
     t.integer "offsite_processed"
     t.integer "abandoned"
     t.datetime "date"
+  end
+
+  create_table "circulation_seats_requests", force: :cascade do |t|
+    t.integer "space_id"
+    t.string "name"
+    t.string "location"
+    t.string "zone"
+    t.datetime "from"
+    t.datetime "to"
+    t.datetime "created"
+    t.string "status"
   end
 
   create_table "consultation_interactions", force: :cascade do |t|

@@ -82,6 +82,7 @@ group :development do
   #tiny_tds and activerecord-sqlserver-adapter gems are needed by only import_helper.rb, which is not really part of the app, it is more for diagnosing/troubleshooting sql server sources
   gem "capistrano", "~> 3.10", require: false
   gem "capistrano-rails", "~> 1.6", require: false
+  gem 'capistrano-passenger', require: false
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

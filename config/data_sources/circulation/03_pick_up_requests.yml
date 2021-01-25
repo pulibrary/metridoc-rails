@@ -3,3 +3,5 @@ target_model:          "Circulation::PickUpRequest"
 target_adapter:        "csv"
 truncate_before_load:  "no"
 file_name:             "pickup-architecture.csv"
+column_mappings: 
+  location: "Architecture Library"
