@@ -2,4 +2,4 @@ load_sequence:         4
 target_model:          "Circulation::PickUpRequest"
 target_adapter:        "csv"
 truncate_before_load:  "no"
-file_name:             "pickup-ela.csv"
+file_name:             "pickup-eal.csv"
