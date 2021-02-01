@@ -3,3 +3,5 @@ target_model:          "Circulation::PickUpRequest"
 target_adapter:        "csv"
 truncate_before_load:  "yes"
 file_name:             "pickup-firestone.csv"
+column_mappings: 
+  location: "Firestone Library"

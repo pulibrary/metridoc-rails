@@ -1,6 +1,6 @@
 class Circulation::PickUpRequest < Circulation::Base
   def self.last_week
-    4.weeks.ago.beginning_of_week..4.weeks.ago.end_of_week
+    3.weeks.ago.beginning_of_week..3.weeks.ago.end_of_week
   end
 
   def self.format_date_range(date_range: last_week)
@@ -19,6 +19,6 @@ class Circulation::PickUpRequest < Circulation::Base
       combined_values[location]["Processed Off Site"] = value[3]
       combined_values[location]["Not Picked Up"] = value[4]
     end
-    combined_values.map{ |key,value| {name: key, data: value} }
+    combined_values.map{ |key,value| {name: key, data: value, color: color_for_location(key)} }
   end
 end

@@ -1,0 +1,10 @@
+load_sequence:         9
+target_model:          "Circulation::SeatsRequest"
+target_adapter:        "csv"
+truncate_before_load:  "yes"
+file_name:             "lc_space.csv"
+column_mappings: 
+  from: "%{from_date} %{from_time}"
+  to: "%{to_date} %{to_time}"
+  created: "%{created_date} %{created_time}"
+  name: "%{space_seat_name}"

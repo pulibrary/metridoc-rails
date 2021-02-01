@@ -192,8 +192,10 @@ module Import
         Util.convert_to_utf8(csv_file_path)
 
         headers = get_headers
+        mapping_fields = column_mappings.values.map{ |mapping| mapping.scan(/(?<=\%\{)[^}]*(?=\})/).map{|value| value.lstrip.chomp}}
+        mapping_fields = mapping_fields.flatten.uniq
 
-        unmatched_columns = headers.select { |column_name| class_name.columns_hash[column_name].blank? }
+        unmatched_columns = (headers+mapping_fields).select { |column_name| class_name.columns_hash[column_name].blank? }
         if unmatched_columns.present?
           log "!!WARNING!!: These columns are not processed: [#{unmatched_columns.join(", ")}]"
         end
@@ -226,28 +228,28 @@ module Import
 
                 val = row[column_name.to_sym]
 
-                if class_name.columns_hash[column_name].type == :integer && !Util.valid_integer?(val)
-                  log "Invalid integer [#{val}] in column: #{column_name} row: #{row.to_h}"
+                begin 
+                  value = validate_and_parse_value(val, column_name, row)
+                  attributes[column_name] = value
+                rescue StandardError => error
+                  log error.message
                   n_errors = n_errors + 1
                   row_error = true
-                  next
                 end
-                if class_name.columns_hash[column_name].type == :datetime && !Util.valid_datetime?(val)
-                  log "Invalid datetime [#{val}] in column: #{column_name} row: #{row.to_h}"
-                  n_errors = n_errors + 1
-                  row_error = true
-                  next
-                end
-                if class_name.columns_hash[column_name].type == :date && !Util.valid_datetime?(val)
-                  log "Invalid date [#{val}] in column: #{column_name} row: #{row.to_h}"
-                  n_errors = n_errors + 1
-                  row_error = true
-                  next
-                end
+              end
 
-                val = Util.parse_datetime(val) if class_name.columns_hash[column_name].type == :datetime
 
-                attributes[column_name] = val
+              column_mappings.each do |column_name,template|
+                next if class_name.columns_hash[column_name].blank?
+                begin 
+                  value = template % row.to_h.transform_keys{|key| key.to_sym if key.present?}
+                  value = validate_and_parse_value(value, column_name, row)
+                  attributes[column_name] = value
+                rescue StandardError => error
+                  log error.message
+                  n_errors = n_errors + 1
+                  row_error = true
+                end
               end
 
               next if row_error
@@ -380,6 +382,28 @@ module Import
         log = "#{Time.now} - #{m}"
         log_job_execution_step.log_line(log)
         puts log
+      end
+
+    private
+
+      def validate_and_parse_value(val, column_name, row)
+        if class_name.columns_hash[column_name].type == :integer && !Util.valid_integer?(val)
+          raise StandardError.new("Invalid integer [#{val}] in column: #{column_name} row: #{row.to_h}")
+        end
+        if class_name.columns_hash[column_name].type == :datetime && !Util.valid_datetime?(val)
+          raise StandardError.new("Invalid datetime [#{val}] in column: #{column_name} row: #{row.to_h}")
+        end
+        if class_name.columns_hash[column_name].type == :date && !Util.valid_datetime?(val)
+          raise StandardError.new("Invalid date [#{val}] in column: #{column_name} row: #{row.to_h}")
+        end
+
+        val = Util.parse_datetime(val) if class_name.columns_hash[column_name].type == :datetime
+
+        return val
+      end
+
+      def column_mappings
+        task_config["column_mappings"] || {}
       end
 
     end # class Task
