@@ -7,8 +7,9 @@ module Import
 
       HEADER_CONVERTER = ->(header) { Util.column_to_attribute(header).to_sym }
 
-      def initialize(main_driver, task_file, test_mode = false)
+      def initialize(main_driver, task_file, test_mode = false, google_drive: nil)
         @main_driver, @task_file, @test_mode = main_driver, task_file, test_mode
+        @google_drive = google_drive
       end
 
       def log_job_execution
@@ -54,7 +55,7 @@ module Import
 
       def task_config
         return @task_config unless @task_config.blank?
-        @task_config = global_config.merge(YAML.load_file(@task_file))
+        @task_config = global_config.merge(YAML.load(ERB.new(File.read(@task_file)).result))
       end
 
       def target_adapter
@@ -73,6 +74,8 @@ module Import
           return_value = execute_native_query
         elsif target_adapter == "console_command"
           return_value = execute_console_command
+        elsif target_adapter == "google_sheet"
+          return_value = import_google_sheet
         else
           raise "Unsupported target_adapter type >> #{target_adapter}"
         end
@@ -192,13 +195,7 @@ module Import
         Util.convert_to_utf8(csv_file_path)
 
         headers = get_headers
-        mapping_fields = column_mappings.values.map{ |mapping| mapping.scan(/(?<=\%\{)[^}]*(?=\})/).map{|value| value.lstrip.chomp}}
-        mapping_fields = mapping_fields.flatten.uniq
-
-        unmatched_columns = (headers+mapping_fields).select { |column_name| class_name.columns_hash[column_name].blank? }
-        if unmatched_columns.present?
-          log "!!WARNING!!: These columns are not processed: [#{unmatched_columns.join(", ")}]"
-        end
+        warn_unmatched_headers(headers)
 
         n_errors = 0
         success = true
@@ -221,35 +218,18 @@ module Import
               row = csv.shift
               break unless row
 
-              row_error = false
-              attributes = {}
-              headers.each do |column_name|
-                next if class_name.columns_hash[column_name].blank?
-
-                val = row[column_name.to_sym]
-
-                begin 
-                  value = validate_and_parse_value(val, column_name, row)
-                  attributes[column_name] = value
-                rescue StandardError => error
-                  log error.message
-                  n_errors = n_errors + 1
-                  row_error = true
-                end
+              row_hash = row.to_h.transform_keys{|key| key.to_sym if key.present?}
+              if row_hash.values.uniq.count == 0 && row_hash.values[0].blank?
+                next
               end
 
+              row_error = false
+              attributes = {}
 
-              column_mappings.each do |column_name,template|
-                next if class_name.columns_hash[column_name].blank?
-                begin 
-                  value = template % row.to_h.transform_keys{|key| key.to_sym if key.present?}
-                  value = validate_and_parse_value(value, column_name, row)
-                  attributes[column_name] = value
-                rescue StandardError => error
-                  log error.message
-                  n_errors = n_errors + 1
-                  row_error = true
-                end
+              errors = column_mappings_to_attributes(headers: headers, attributes: attributes , row_hash: row_hash)
+              if errors.positive?
+                n_errors += errors
+                row_error = true
               end
 
               next if row_error
@@ -386,18 +366,101 @@ module Import
 
     private
 
+      def import_google_sheet
+        drive = @google_drive || Import::GoogleDrive.new
+        file_id = task_config["file_id"]
+        workbook = drive.workbook(file_id: file_id)
+        if workbook
+          import_worksheet(workbook[sheet_name]) 
+        else
+          log "Failed opening workbook! File id: #{file_id}"
+        end
+      end
+
+      def import_worksheet(worksheet)
+        headers = worksheet_headers(worksheet)
+        warn_unmatched_headers(headers)
+        n_errors = 0
+        success = true
+        ActiveRecord::Base.transaction do
+          truncate if truncate_before_load?
+
+          records = []
+
+          ((header_rows_to_skip+1)..worksheet.count).each do |row_number|
+              if n_errors >= max_errors
+                log "Too many errors #{n_errors}, exiting!"
+                records = []
+                success = false
+                break
+              end
+
+              row = worksheet[row_number]
+              break unless row
+
+              row_hash = worksheet_row_to_hash(row, headers)
+
+              if row_hash.values.uniq.count == 0 || (row_hash.values.uniq.count == 1 && row_hash.values[0].blank?)
+                next
+              end
+
+              row_error = false
+              attributes = {}
+
+              errors = column_mappings_to_attributes(headers: headers, attributes: attributes , row_hash: row_hash)
+              if errors.positive?
+                n_errors += errors
+                row_error = true
+              end
+
+              next if row_error
+
+              # puts "attributes=#{attributes.inspect}"
+              attributes.merge!(institution_id: institution_id) if has_institution_id?
+              records << class_name.new(attributes)
+
+              if records.size >= batch_size
+                n_errors += import_records(records)
+                records = []
+              end
+
+          rescue StandardError => e
+            n_errors = n_errors + 1
+            log "skipping bad row - Error: #{e.message}"
+          end # loop
+
+          if records.size > 0
+            n_errors += import_records(records)
+            records = []
+          end
+
+          if n_errors >= max_errors
+            log "Too many errors #{n_errors}."
+            success = false
+          else
+            log "Finished importing #{class_name.model_name.human}."
+          end
+
+          unless success
+            raise ActiveRecord::Rollback, "Rolling back the upload."
+          end
+        end # ActiveRecord::Base.transaction
+
+        return success
+      end
+
       def validate_and_parse_value(val, column_name, row)
         if class_name.columns_hash[column_name].type == :integer && !Util.valid_integer?(val)
           raise StandardError.new("Invalid integer [#{val}] in column: #{column_name} row: #{row.to_h}")
         end
-        if class_name.columns_hash[column_name].type == :datetime && !Util.valid_datetime?(val)
+        if class_name.columns_hash[column_name].type == :datetime && !(val.class == DateTime || Util.valid_datetime?(val))
           raise StandardError.new("Invalid datetime [#{val}] in column: #{column_name} row: #{row.to_h}")
         end
-        if class_name.columns_hash[column_name].type == :date && !Util.valid_datetime?(val)
+        if class_name.columns_hash[column_name].type == :date && !(val.class == DateTime || Util.valid_datetime?(val))
           raise StandardError.new("Invalid date [#{val}] in column: #{column_name} row: #{row.to_h}")
         end
 
-        val = Util.parse_datetime(val) if class_name.columns_hash[column_name].type == :datetime
+        val = Util.parse_datetime(val) if class_name.columns_hash[column_name].type == :datetime && val.class != DateTime
 
         return val
       end
@@ -406,6 +469,78 @@ module Import
         task_config["column_mappings"] || {}
       end
 
-    end # class Task
+      def column_mapping_fields
+        return @mapping_fields if @mapping_fields.present?
+        @mapping_fields = column_mappings.values.map do  |mapping| 
+                            fields = mapping.scan(/(?<=\%\{)[^}]*(?=\})/)
+                            fields.map{|value| value.lstrip.chomp}
+                          end
+        @mapping_fields = @mapping_fields.flatten.uniq
+      end
 
+      def worksheet_headers(worksheet)
+        headers = convert_row_to_values( worksheet[header_rows_to_skip])
+        headers.map {|header| Util.column_to_attribute(header) }
+      end
+
+      def worksheet_row_to_hash(row, headers)
+        hash = {}
+        headers.each_with_index do |header, idx|
+          hash[header.to_sym] = row[idx].value if row[idx].present?
+        end
+        hash
+      end
+
+      def header_rows_to_skip
+        task_config["header_rows_to_skip"] || 0
+      end
+
+      def sheet_name
+        task_config["sheet_name"] || 0 # by default just get the first sheet if none named
+      end
+
+      def convert_row_to_values(row)
+        values = []
+        (0..row.size-1).each do |i|
+          break if row[i].blank? || row[i].value.blank?
+          values << row[i].value
+        end
+        values
+      end
+
+      def warn_unmatched_headers(headers)
+        unmatched_columns = (headers-column_mapping_fields).select { |column_name| class_name.columns_hash[column_name].blank? }
+        if unmatched_columns.present?
+          log "!!WARNING!!: These columns are not processed: [#{unmatched_columns.join(", ")}]"
+        end
+      end
+
+      def column_mappings_to_attributes(headers:, attributes: , row_hash:)
+        errors = 0
+
+        headers.each do |column_name|
+          next if class_name.columns_hash[column_name].blank?
+          val = row_hash[column_name.to_sym]
+          begin 
+            value = validate_and_parse_value(val, column_name, row_hash)
+            attributes[column_name] = value
+          rescue StandardError => error
+            log error.message
+            errors += 1
+          end
+        end
+        column_mappings.each do |column_name,template|
+          next if class_name.columns_hash[column_name].blank?
+          begin 
+            value = template % row_hash
+            value = validate_and_parse_value(value, column_name, row_hash)
+            attributes[column_name] = value
+          rescue StandardError => error
+            log error.message
+            errors += 1
+          end
+        end
+        errors
+      end
+    end # class Task
 end

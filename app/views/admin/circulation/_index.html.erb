@@ -1,30 +1,32 @@
 <%= javascript_include_tag 'application' %>
+<% pick_up_range = pick_up_weeks_ago.weeks.ago.beginning_of_week..pick_up_weeks_ago.weeks.ago.end_of_week %>
+<% pick_up_previous_range = (pick_up_weeks_ago+1).weeks.ago.beginning_of_week..(pick_up_weeks_ago+1).weeks.ago.end_of_week %>
 <div id="data-viz">
   <div class="container">
     <h2>Pick Up requests</h2>
     <div id="left-col">
       <h3>
-        <%= Circulation::PickUpRequest.format_date_range %>
+        <%= Circulation::PickUpRequest.format_date_range(date_range: pick_up_range) %>
       </h3>
-      <%= bar_chart Circulation::PickUpRequest.gather_data, stacked: true %>
+      <%= bar_chart Circulation::PickUpRequest.gather_data(date_range: pick_up_range), stacked: true %>
     </div>
     <div id="right-col">
       <h3>
-        <%= Circulation::PickUpRequest.format_date_range(date_range: 5.weeks.ago.beginning_of_week..5.weeks.ago.end_of_week) %>
+        <%= Circulation::PickUpRequest.format_date_range(date_range: pick_up_previous_range) %>
       </h3>
-      <%= bar_chart Circulation::PickUpRequest.gather_data(date_range: 5.weeks.ago.beginning_of_week..5.weeks.ago.end_of_week), stacked: true %>
+      <%= bar_chart Circulation::PickUpRequest.gather_data(date_range: pick_up_previous_range), stacked: true %>
     </div>
   </div>
   <div class="container">
     <h2>Seats Requests</h2>
-    <% range = 6.weeks.ago.beginning_of_week..6.weeks.ago.end_of_week %>
+    <% seat_range = seats_weeks_ago.weeks.ago.beginning_of_week..seats_weeks_ago.weeks.ago.end_of_week %>
     <h3>
-      <%= Circulation::PickUpRequest.format_date_range(date_range: range) %>
+      <%= Circulation::PickUpRequest.format_date_range(date_range: seat_range) %>
     </h3>
-    <%= column_chart Circulation::SeatsRequest.gather_data(date_range: range), stacked: true, library: { scales: {xAxes: [{ barThickness: 40}]}} %>
+    <%= column_chart Circulation::SeatsRequest.gather_data(date_range: seat_range), stacked: true, library: { scales: {xAxes: [{ barThickness: 40}]}} %>
   </div>
   <div class="container">
-    <% data = Circulation::SeatsRequest.gather_status_data(date_range: range)%>
+    <% data = Circulation::SeatsRequest.gather_status_data(date_range: seat_range)%>
     <%= bar_chart data, stacked: true, colors: Circulation::SeatsRequest.colors_for_status_data(data: data)  %>
   </div>
 </div>

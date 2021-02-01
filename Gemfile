@@ -52,6 +52,9 @@ gem 'chronic'
 gem 'delayed_job_active_record'
 gem 'daemons'
 
+gem 'google-api-client'
+gem 'rubyXL'
+
 gem 'dotenv-rails'
 
   gem 'tiny_tds', '~> 2.1.0'
