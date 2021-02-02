@@ -1,12 +1,12 @@
-load_sequence:         3
+load_sequence:         14
 target_model:          "Circulation::PickUpRequest"
 target_adapter:        "google_sheet"
-file_id:               <%= ENV["FALL_STATS_FILE_ID"] %>
+file_id:               <%= ENV["SPRING_STATS_FILE_ID"] %>
 truncate_before_load:  "no"
-sheet_name:            "Architecture"
+sheet_name:            "EAL"
 header_rows_to_skip:   3
 column_mappings: 
-  location: "Architecture Library"
+  location: "East Asian Library"
   received: "%{your_location_requests_received}"
   local_processed: "%{your_location_requests_processed_for_pickup}"
   offsite_processed: "%{re_cap_or_annex_reqs_processed_for_pickup}"

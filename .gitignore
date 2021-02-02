@@ -42,3 +42,5 @@
 # Ignore Mac directory meta files
 .DS_Store
 
+credentials.json
+spec/fixtures/*.original

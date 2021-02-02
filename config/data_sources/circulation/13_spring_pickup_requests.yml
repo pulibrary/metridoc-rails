@@ -1,7 +1,7 @@
-load_sequence:         3
+load_sequence:         10
 target_model:          "Circulation::PickUpRequest"
 target_adapter:        "google_sheet"
-file_id:               <%= ENV["FALL_STATS_FILE_ID"] %>
+file_id:               <%= ENV["SPRING_STATS_FILE_ID"] %>
 truncate_before_load:  "no"
 sheet_name:            "Architecture"
 header_rows_to_skip:   3
