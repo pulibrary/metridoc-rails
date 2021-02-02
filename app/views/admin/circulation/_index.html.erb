@@ -19,6 +19,7 @@
   </div>
   <div class="container">
     <h2>Seats Requests</h2>
+
     <% seat_range = seats_weeks_ago.weeks.ago.beginning_of_week..seats_weeks_ago.weeks.ago.end_of_week %>
     <h3>
       <%= Circulation::PickUpRequest.format_date_range(date_range: seat_range) %>
@@ -29,6 +30,7 @@
     <% data = Circulation::SeatsRequest.gather_status_data(date_range: seat_range)%>
     <%= bar_chart data, stacked: true, colors: Circulation::SeatsRequest.colors_for_status_data(data: data)  %>
   </div>
+  <%= render partial: 'seats_table_by_week', locals: { seats_weeks_ago: seats_weeks_ago } %>
 </div>
 <h2>Data</h2>
 <ul>

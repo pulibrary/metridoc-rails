@@ -23,6 +23,8 @@
         <h1><%= I18n.t('pages.homepage_heading') %></h1>
         <p><%= I18n.t('pages.homepage_text') %></p>
       </div>
+      <div>
+        <%= render partial: 'admin/circulation/seats_table_by_week' %>
       </div>
     </div>
   </div>
