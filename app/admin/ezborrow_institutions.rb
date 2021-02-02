@@ -1,7 +1,8 @@
+# frozen_string_literal: true
 ActiveAdmin.register Ezborrow::Institution do
   menu false
   permit_params :library_id, :library_symbol, :institution_name, :prime_post_zipcode, :weighting_factor
-  actions :all, :except => [:new, :edit, :update, :destroy]
+  actions :all, except: [:new, :edit, :update, :destroy]
 
   preserve_default_filters!
 
@@ -10,5 +11,4 @@ ActiveAdmin.register Ezborrow::Institution do
   filter :institution_name, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :prime_post_zipcode, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :weighting_factor, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
-
 end

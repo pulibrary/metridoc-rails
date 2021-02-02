@@ -1,7 +1,8 @@
+# frozen_string_literal: true
 ActiveAdmin.register Borrowdirect::CallNumber do
   menu false
   permit_params :request_number, :holdings_seq, :supplier_code, :call_number, :process_date, :load_time, :call_number_id, :version
-  actions :all, :except => [:new, :edit, :update, :destroy]
+  actions :all, except: [:new, :edit, :update, :destroy]
 
   preserve_default_filters!
   filter :request_number, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
@@ -12,5 +13,4 @@ ActiveAdmin.register Borrowdirect::CallNumber do
   filter :load_time, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :call_number_id, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :version, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
-
 end

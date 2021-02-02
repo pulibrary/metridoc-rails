@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'test_helper'
 
 class ReportGalleryControllerTest < ActionDispatch::IntegrationTest
@@ -5,5 +6,4 @@ class ReportGalleryControllerTest < ActionDispatch::IntegrationTest
     get report_gallery_index_url
     assert_response :success
   end
-
 end

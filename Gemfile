@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
@@ -28,68 +29,69 @@ gem 'jbuilder', '~> 2.5'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'pg'
 gem 'mysql2'
+gem 'pg'
 
 gem 'makara', '~> 0.4.1'
 
-gem 'activerecord-import'
 gem 'active_storage_validations'
+gem 'activerecord-import'
 
-gem 'devise'
 gem 'activeadmin'
+gem 'devise'
 gem 'haml'
 
-gem 'active_material', github: 'vigetlabs/active_material'
 gem 'active_admin_sidebar'
+gem 'active_material', github: 'vigetlabs/active_material'
 
-gem 'chartkick'
 gem 'active_median'
+gem 'chartkick'
 gem 'groupdate'
 
 gem 'chronic'
 
-gem 'delayed_job_active_record'
 gem 'daemons'
+gem 'delayed_job_active_record'
 
 gem 'google-api-client'
 gem 'rubyXL'
 
 gem 'dotenv-rails'
 
-  gem 'tiny_tds', '~> 2.1.0'
-  gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
-  gem 'rails_db'
-  gem "letter_opener"
+gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
+gem "letter_opener"
+gem 'rails_db'
+gem 'tiny_tds', '~> 2.1.0'
 
 group :development, :test do
-  gem 'rb-readline'
   gem 'pry'
+  gem 'rb-readline'
   # gem 'pry-rails'
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   # Adds support for Capybara system testing and selenium driver
   gem 'capybara', '~> 2.13.0'
-  gem 'selenium-webdriver'
   gem 'rspec-rails'
+  gem 'selenium-webdriver'
 end
 
 group :development do
   # Access an IRB console on exception pages or by using <%= console %> anywhere in the code.
-  gem 'web-console', '>= 3.3.0'
   gem 'listen', '>= 3.0.5', '< 3.2'
+  gem 'web-console', '>= 3.3.0'
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
   gem 'spring-watcher-listen', '~> 2.0.0'
 
-  #tiny_tds and activerecord-sqlserver-adapter gems are needed by only import_helper.rb, which is not really part of the app, it is more for diagnosing/troubleshooting sql server sources
+  # tiny_tds and activerecord-sqlserver-adapter gems are needed by only import_helper.rb, which is not really part of the app, it is more for diagnosing/troubleshooting sql server sources
+  gem "bixby"
   gem "capistrano", "~> 3.10", require: false
-  gem "capistrano-rails", "~> 1.6", require: false
   gem 'capistrano-passenger', require: false
+  gem "capistrano-rails", "~> 1.6", require: false
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 # Some versions of Ubuntu also requires this gem
 gem 'tzinfo-data'
 
-gem 'todo_runner', :git => 'https://github.com/upenn-libraries/todo_runner.git', :tag => 'v0.4.2'
+gem 'todo_runner', git: 'https://github.com/upenn-libraries/todo_runner.git', tag: 'v0.4.2'

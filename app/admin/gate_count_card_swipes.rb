@@ -1,7 +1,8 @@
+# frozen_string_literal: true
 ActiveAdmin.register GateCount::CardSwipe do
   menu false
   permit_params :entry_date, :entry_time, :door_name, :affiliation_desc, :center_desc, :dept_desc, :usc_desc
-  actions :all, :except => [:new, :edit, :update, :destroy]
+  actions :all, except: [:new, :edit, :update, :destroy]
 
   preserve_default_filters!
 
@@ -12,5 +13,4 @@ ActiveAdmin.register GateCount::CardSwipe do
   filter :center_desc, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :dept_desc, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :usc_desc, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
-
 end

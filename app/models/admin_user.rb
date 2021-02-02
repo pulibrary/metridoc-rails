@@ -1,8 +1,9 @@
+# frozen_string_literal: true
 class AdminUser < ApplicationRecord
   belongs_to :user_role, class_name: "Security::UserRole", optional: true
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, 
+  devise :database_authenticatable,
          :recoverable, :rememberable, :validatable
 
   def to_xml(options = {})
@@ -16,27 +17,27 @@ class AdminUser < ApplicationRecord
   end
 
   def authorized?(action, subject)
-    return true if self.super_admin?
+    return true if super_admin?
 
     # check for edit_profile
     return true if subject == self
 
-    return !Security::UserRole.subject_secured?(subject) if self.user_role.blank?
+    return !Security::UserRole.subject_secured?(subject) if user_role.blank?
 
-    return self.user_role.authorized?(action, subject)
+    user_role.authorized?(action, subject)
   end
 
   def full_name
-    self.first_name.blank? && self.last_name.blank? ? "#{self.email}" : [self.first_name, self.last_name].join(" ")
+    first_name.blank? && last_name.blank? ? email.to_s : [first_name, last_name].join(" ")
   end
 
   def can_edit_system_admin_attribute?(admin_user)
-    return system_admin? && admin_user != self
+    system_admin? && admin_user != self
   end
 
-  protected 
-  def password_required? 
-    self.encrypted_password.blank?
-  end 
+  protected
 
+  def password_required?
+    encrypted_password.blank?
+  end
 end

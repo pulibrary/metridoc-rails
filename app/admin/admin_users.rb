@@ -1,19 +1,20 @@
+# frozen_string_literal: true
 ActiveAdmin.register AdminUser do
   permit_params do
-              [
-                :email,
-                :first_name,
-                :last_name,
-                :password,
-                :password_confirmation,
-                current_admin_user.super_admin? ? :super_admin : nil,
-                current_admin_user.authorized?('read-write', "Security") ? :user_role_id : nil,
-              ]
+    [
+      :email,
+      :first_name,
+      :last_name,
+      :password,
+      :password_confirmation,
+      current_admin_user.super_admin? ? :super_admin : nil,
+      current_admin_user.authorized?('read-write', "Security") ? :user_role_id : nil
+    ]
   end
 
   actions :all
 
-  menu if: proc{ authorized?(:read, AdminUser) }, parent: I18n.t("phrases.security")
+  menu if: proc { authorized?(:read, AdminUser) }, parent: I18n.t("phrases.security")
 
   index do
     selectable_column
@@ -34,25 +35,25 @@ ActiveAdmin.register AdminUser do
 
   action_item :edit,
               only: :show,
-              if: proc{ current_admin_user != resource && current_admin_user.authorized?('read-write', AdminUser) } do
-    link_to "#{I18n.t('active_admin.edit_resource', resource: AdminUser.model_name.human)}", edit_resource_path(resource)
+              if: proc { current_admin_user != resource && current_admin_user.authorized?('read-write', AdminUser) } do
+    link_to I18n.t('active_admin.edit_resource', resource: AdminUser.model_name.human).to_s, edit_resource_path(resource)
   end
   action_item :destroy,
               only: :show,
-              if: proc{ current_admin_user != resource && current_admin_user.authorized?('read-write', AdminUser) } do
-    link_to "#{I18n.t('active_admin.delete_resource', resource: AdminUser.model_name.human)}", resource_path(resource), method: :delete, data: {confirm: I18n.t("phrases.are_you_sure") }
+              if: proc { current_admin_user != resource && current_admin_user.authorized?('read-write', AdminUser) } do
+    link_to I18n.t('active_admin.delete_resource', resource: AdminUser.model_name.human).to_s, resource_path(resource), method: :delete, data: { confirm: I18n.t("phrases.are_you_sure") }
   end
 
   show do |admin_user|
-      attributes_table do
-        row :first_name
-        row :last_name
-        row :email
-        row :user_role_id do
-          admin_user.user_role_id.present? ? admin_user.user_role.name : "-"
-        end
-        row :super_admin if current_admin_user.super_admin?
+    attributes_table do
+      row :first_name
+      row :last_name
+      row :email
+      row :user_role_id do
+        admin_user.user_role_id.present? ? admin_user.user_role.name : "-"
       end
+      row :super_admin if current_admin_user.super_admin?
+    end
   end
 
   filter :email
@@ -67,7 +68,9 @@ ActiveAdmin.register AdminUser do
       f.input :first_name
       f.input :last_name
       f.input :email
-      f.input :user_role_id, as: :select, collection: Security::UserRole.all.map{|r| [r.name, r.id]}, include_blank: t("phrases.please_select") if current_admin_user.authorized?('read-write', "Security")
+      if current_admin_user.authorized?('read-write', "Security")
+        f.input :user_role_id, as: :select, collection: Security::UserRole.all.map { |r| [r.name, r.id] }, include_blank: t("phrases.please_select")
+      end
       f.input :super_admin if current_admin_user.super_admin?
       f.input :password
       f.input :password_confirmation
@@ -78,5 +81,4 @@ ActiveAdmin.register AdminUser do
   collection_action :edit_profile, method: :get do
     render "edit_profile"
   end
-
 end

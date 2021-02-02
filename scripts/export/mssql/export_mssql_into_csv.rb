@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # require 'rubygems'
 ENV['BUNDLE_GEMFILE'] = 'Gemfile.sqlserver'
 require 'bundler/setup'
@@ -5,23 +6,22 @@ require 'optparse'
 require 'makara'
 Bundler.require(:default)
 
-# hack to get the activerecord 4.1.2 work with Ruby 2.5.1
+# HACK: to get the activerecord 4.1.2 work with Ruby 2.5.1
 module Arel
   module Visitors
     class DepthFirst < Arel::Visitors::Visitor
-      alias :visit_Integer :terminal
+      alias visit_Integer terminal
     end
 
     class Dot < Arel::Visitors::Visitor
-      alias :visit_Integer :visit_String
+      alias visit_Integer visit_String
     end
 
     class ToSql < Arel::Visitors::Visitor
-      alias :visit_Integer :literal
+      alias visit_Integer literal
     end
   end
 end
-
 
 # require 'active_record'
 require './main.rb'
@@ -41,9 +41,9 @@ options = {}
 option_parser = OptionParser.new
 option_parser.banner = "Usage: rake import -- --options"
 parameters.each do |short, long, description|
-  option_parser.on("-#{short} value", "--#{long} value", description) { |parameter_value|
+  option_parser.on("-#{short} value", "--#{long} value", description) do |parameter_value|
     options[long.to_sym] = parameter_value
-  }
+  end
 end
 # return `ARGV` with the intended arguments
 args = option_parser.order!(ARGV) {}

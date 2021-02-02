@@ -1,5 +1,6 @@
+# frozen_string_literal: true
 ActiveAdmin.register Misc::ConsultationData do
-  menu if: proc{ authorized?(:read, Misc::ConsultationData) }, parent: I18n.t("active_admin.misc")
+  menu if: proc { authorized?(:read, Misc::ConsultationData) }, parent: I18n.t("active_admin.misc")
 
   permit_params :submitted,
                 :consultation_or_instruction,
@@ -31,11 +32,7 @@ ActiveAdmin.register Misc::ConsultationData do
                 :ip,
                 :refer,
                 :browser
-  actions :all, :except => [:new, :edit, :update, :destroy]
+  actions :all, except: [:new, :edit, :update, :destroy]
 
   preserve_default_filters!
-
 end
-
-
-

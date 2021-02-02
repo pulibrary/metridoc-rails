@@ -1,6 +1,6 @@
+# frozen_string_literal: true
 class Institution < ApplicationRecord
-
-  scope :of_code, -> (code) { where(code: code) }
+  scope :of_code, ->(code) { where(code: code) }
 
   def self.get_id_from_code(code)
     i = of_code(code).first
@@ -8,7 +8,6 @@ class Institution < ApplicationRecord
   end
 
   def ups_zone
-    (z = UpsZone.of_zip_code(self.zip_code).first).present? ? z.zone : nil
+    (z = UpsZone.of_zip_code(zip_code).first).present? ? z.zone : nil
   end
-
 end

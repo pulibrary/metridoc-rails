@@ -1,15 +1,15 @@
+# frozen_string_literal: true
 module Export
   module Mssql
-
     class Task
-
       def initialize(main_driver, task_file)
-        @main_driver, @task_file = main_driver, task_file
+        @main_driver = main_driver
+        @task_file = task_file
       end
 
       def task_config
-        return @task_config unless @task_config.blank?
-        @task_config = @main_driver.global_config.merge( YAML.load(ERB.new(File.read(@task_file)).result) )
+        return @task_config if @task_config.present?
+        @task_config = @main_driver.global_config.merge(YAML.safe_load(ERB.new(File.read(@task_file)).result))
       end
 
       def import_model_name
@@ -17,12 +17,16 @@ module Export
       end
 
       def import_model
-        return import_model_name.constantize if (import_model_name.constantize rescue nil)
-        klass = Object.const_set(import_model_name, Class.new(ActiveRecord::Base))
+        return import_model_name.constantize if begin
+                                                   import_model_name.constantize
+                                                rescue
+                                                  nil
+                                                 end
+        klass = Object.const_set(import_model_name, Class.new(ApplicationRecord))
         klass.table_name = task_config['source_table']
         klass.establish_connection @main_driver.db_opts
         klass.primary_key = nil
-        # TODO handle multiple source_tables / break them into joins
+        # TODO: handle multiple source_tables / break them into joins
         klass
       end
 
@@ -35,20 +39,16 @@ module Export
       end
 
       def from_date
-        @from_date if @from_date.present?
+        @from_date.presence
         @from_date = nil
-        if task_config["from_date"].present?
-          @from_date = Date.parse(task_config["from_date"])
-        end
+        @from_date = Date.parse(task_config["from_date"]) if task_config["from_date"].present?
         @from_date
       end
 
       def to_date
-        @to_date if @to_date.present?
+        @to_date.presence
         @to_date = nil
-        if task_config["to_date"].present?
-          @to_date =  Date.parse( task_config["to_date"] )
-        end
+        @to_date = Date.parse(task_config["to_date"]) if task_config["to_date"].present?
         @to_date
       end
 
@@ -64,13 +64,11 @@ module Export
         end
 
         environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
-        dbconfig = YAML.load(ERB.new(File.read(File.join(@main_driver.root_path, 'config', 'database.yml'))).result)
+        dbconfig = YAML.safe_load(ERB.new(File.read(File.join(@main_driver.root_path, 'config', 'database.yml'))).result)
         Bookkeeping::DataLoad.establish_connection(dbconfig[environment])
-        table = Bookkeeping::DataLoad.find_by(:table_name => task_config['config_folder'])
+        table = Bookkeeping::DataLoad.find_by(table_name: task_config['config_folder'])
 
-        if export_filter_date_range_sql.present? && from_date.present? && to_date.present? && !table.nil?
-          raise "Ranged queries not supported in production mode.  Specify a from OR a to date."
-        end
+        raise "Ranged queries not supported in production mode.  Specify a from OR a to date." if export_filter_date_range_sql.present? && from_date.present? && to_date.present? && !table.nil?
 
         earliest = table.earliest.to_date unless table.nil?
         if export_filter_date_sql.present? && !earliest.nil?
@@ -78,18 +76,16 @@ module Export
             validate_range_request('from', earliest, nil) unless earliest.nil?
             scope = scope.where(export_filter_date_sql, from_date)
           elsif to_date.present?
-            scope = scope.where(export_filter_date_sql, Date.today - 1.years)
+            scope = scope.where(export_filter_date_sql, Date.today - 1.year)
           end
         end
 
         if export_filter_date_range_sql.present?
           validate_range_request('to', earliest, nil) unless earliest.nil?
-          scope = scope.where(export_filter_date_range_sql, from_date || Date.today - 1.years, to_date || earliest || Date.today)
+          scope = scope.where(export_filter_date_range_sql, from_date || Date.today - 1.year, to_date || earliest || Date.today)
         end
 
-        if group_by_columns.present?
-          scope = scope.group(group_by_columns)
-        end
+        scope = scope.group(group_by_columns) if group_by_columns.present?
 
         scope
       end
@@ -124,19 +120,18 @@ module Export
       end
 
       def select_clause
-        column_mappings.each.map{ |k, v| "#{k} AS #{v}" }.join(", ")
+        column_mappings.each.map { |k, v| "#{k} AS #{v}" }.join(", ")
       end
 
-      def validate_range_request(req_type, earliest, run_date)
+      def validate_range_request(req_type, earliest, _run_date)
         if req_type == 'from'
           raise "From date cannot be greater than #{earliest}" unless from_date < earliest
         elsif req_type == 'to'
           raise "To date cannot be earlier than #{earliest}" if to_date < earliest
-          raise "To date must be after #{Date.today - 1.years}" if to_date < Date.today - 1.years
+          raise "To date must be after #{Date.today - 1.year}" if to_date < Date.today - 1.year
         else
           raise 'Invalid range request type.  Please specify "from" or "to."'
         end
-
       end
 
       def execute
@@ -147,25 +142,24 @@ module Export
         csv_file_path = File.join(task_config["export_folder"], task_config["export_file_name"].downcase)
 
         CSV.open(csv_file_path, "wb") do |csv|
-          csv << column_mappings.map{|k,v| v}
+          csv << column_mappings.map { |_k, v| v }
           db = data
           response = db.connection.query(db.to_sql)
 
           if test_mode?
             response[0...100].each { |r| csv << r }
           else
-            response.each_slice(10000) {|rows| rows.each {|r| csv << r} }
+            response.each_slice(10_000) { |rows| rows.each { |r| csv << r } }
           end
-
         end # CSV.open
 
         log_job_execution_step.set_status!("successful")
-        return true
+        true
 
-        rescue => ex
+      rescue => ex
         log "Error => [#{ex.message}]"
         log_job_execution_step.set_status!("failed")
-        return false
+        false
       end
 
       def column_mappings
@@ -176,25 +170,23 @@ module Export
         return @log_job_execution_step if @log_job_execution_step.present?
 
         environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
-        dbconfig = YAML.load(ERB.new(File.read(File.join(@main_driver.root_path, 'config', 'database.yml'))).result)
+        dbconfig = YAML.safe_load(ERB.new(File.read(File.join(@main_driver.root_path, 'config', 'database.yml'))).result)
         Log::JobExecutionStep.establish_connection dbconfig[environment]
 
         @log_job_execution_step = Log::JobExecutionStep.create!(
                                                           job_execution_id: @main_driver.log_job_execution.id,
                                                           step_name: task_config["load_sequence"],
                                                           step_yml: task_config,
-                                                          started_at: Time.now,
+                                                          started_at: Time.zone.now,
                                                           status: 'running'
-                                                    )
+                                                        )
       end
 
       def log(m)
-        log = "#{Time.now} - #{m}"
+        log = "#{Time.zone.now} - #{m}"
         log_job_execution_step.log_line(log)
         puts log
       end
-
     end # class Task
-
   end
 end

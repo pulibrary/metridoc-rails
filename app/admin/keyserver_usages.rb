@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 ActiveAdmin.register Keyserver::Usage do
   menu false
   permit_params :usage_id, :usage_event, :usage_user_group, :usage_division, :usage_when, :usage_time, :usage_other_time
@@ -9,6 +10,4 @@ ActiveAdmin.register Keyserver::Usage do
   filter :usage_when, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :usage_time, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :usage_other_time, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
-
-
 end

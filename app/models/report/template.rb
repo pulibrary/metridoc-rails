@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class Report::Template < ApplicationRecord
   serialize :select_section, Array
   serialize :group_by_section, Array
@@ -11,7 +12,7 @@ class Report::Template < ApplicationRecord
   validates :name, presence: true, uniqueness: true
 
   has_many :report_template_join_clauses, foreign_key: "report_template_id", class_name: "Report::TemplateJoinClause", dependent: :destroy, inverse_of: :report_template
-  accepts_nested_attributes_for :report_template_join_clauses, allow_destroy: true, reject_if: proc {|attributes| attributes['keyword'].blank? || attributes['table'].blank? || attributes['on_keys'].blank? }
+  accepts_nested_attributes_for :report_template_join_clauses, allow_destroy: true, reject_if: proc { |attributes| attributes['keyword'].blank? || attributes['table'].blank? || attributes['on_keys'].blank? }
   alias join_clauses report_template_join_clauses
 
   def remove_select_section_bad_data
@@ -31,26 +32,26 @@ class Report::Template < ApplicationRecord
   end
 
   def checkbox_options_for_select_section
-    full_field_names = TableRetrieval.attributes(table_names)[:table_attributes].map do |key,values|
-      values.map{|value|"#{key}.#{value}"}
+    full_field_names = TableRetrieval.attributes(table_names)[:table_attributes].map do |key, values|
+      values.map { |value| "#{key}.#{value}" }
     end.flatten
     if full_field_names.blank?
       []
     else
       fields = ["*"] + full_field_names
       fields.map do |attribute_name|
-        [attribute_name, attribute_name, {checked: select_section && select_section.include?(attribute_name)}]
+        [attribute_name, attribute_name, { checked: select_section&.include?(attribute_name) }]
       end
     end
   end
 
   def radio_options_for_group_by_section
     if group_by_section.any?
-      full_field_names = TableRetrieval.attributes(table_names)[:table_attributes].map do |key,values|
-        values.map{|value|"#{key}.#{value}"}
+      full_field_names = TableRetrieval.attributes(table_names)[:table_attributes].map do |key, values|
+        values.map { |value| "#{key}.#{value}" }
       end.flatten
       full_field_names.map do |attribute_name|
-        [attribute_name, attribute_name, {checked: group_by_section && group_by_section.include?(attribute_name)}]
+        [attribute_name, attribute_name, { checked: group_by_section&.include?(attribute_name) }]
       end
     end
   end
@@ -59,11 +60,11 @@ class Report::Template < ApplicationRecord
     if id.nil?
       []
     else
-      full_field_names = TableRetrieval.attributes(table_names)[:table_attributes].map do |key,values|
-        values.map{|value|"#{key}.#{value}"}
+      full_field_names = TableRetrieval.attributes(table_names)[:table_attributes].map do |key, values|
+        values.map { |value| "#{key}.#{value}" }
       end.flatten
       full_field_names.map do |attribute_name|
-        [attribute_name, attribute_name, {checked: order_section && order_section.include?(attribute_name)}]
+        [attribute_name, attribute_name, { checked: order_section&.include?(attribute_name) }]
       end
     end
   end
@@ -81,6 +82,7 @@ class Report::Template < ApplicationRecord
   end
 
   private
+
   def table_names
     tables = []
     tables << from_section
