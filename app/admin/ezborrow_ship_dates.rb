@@ -1,7 +1,8 @@
+# frozen_string_literal: true
 ActiveAdmin.register Ezborrow::ShipDate do
   menu false
   permit_params :ship_date_id, :request_number, :ship_date, :exception_code, :process_date, :load_time, :version
-  actions :all, :except => [:new, :edit, :update, :destroy]
+  actions :all, except: [:new, :edit, :update, :destroy]
 
   preserve_default_filters!
 
@@ -12,5 +13,4 @@ ActiveAdmin.register Ezborrow::ShipDate do
   filter :process_date, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :load_time, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
   filter :version, filters: [:contains, :not_cont, :starts_with, :ends_with, :equals]
-
 end

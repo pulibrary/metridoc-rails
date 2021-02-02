@@ -1,5 +1,5 @@
+# frozen_string_literal: true
 class Borrowdirect::Bibliography < Borrowdirect::Base
-
   ransacker :borrower do
     Arel.sql("to_char(borrower, '9999999999')")
   end
@@ -15,5 +15,4 @@ class Borrowdirect::Bibliography < Borrowdirect::Base
   ransacker :request_number do
     Arel.sql("COALESCE (request_number,'')")
   end
-
 end

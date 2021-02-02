@@ -1,5 +1,5 @@
+# frozen_string_literal: true
 class ReportQueryMailer < ApplicationMailer
-
   def started_notice
     @report_query = params[:report_query]
     @owner = @report_query.owner
@@ -11,5 +11,4 @@ class ReportQueryMailer < ApplicationMailer
     @owner = @report_query.owner
     mail(to: @owner.email, subject: 'File Export Finished')
   end
-
 end

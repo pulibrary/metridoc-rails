@@ -1,16 +1,16 @@
+# frozen_string_literal: true
 module ImportHelper
   class << self
-
     def generate_mysql_migration(output_file_name, prefix, namespace)
-      db_conn_hash = {    host:     ENV["#{namespace.upcase}_MYSQL_HOST"],
-                          port:     ENV["#{namespace.upcase}_MYSQL_PORT"],
+      db_conn_hash = {    host: ENV["#{namespace.upcase}_MYSQL_HOST"],
+                          port: ENV["#{namespace.upcase}_MYSQL_PORT"],
                           database: ENV["#{namespace.upcase}_MYSQL_DB"],
                           username: ENV["#{namespace.upcase}_MYSQL_UID"],
                           password: ENV["#{namespace.upcase}_MYSQL_PWD"],
-                          adapter:  'mysql2',
+                          adapter: 'mysql2',
                           encoding: 'utf8',
-                          pool:     5,
-                          timeout:  5000 }
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -36,11 +36,9 @@ module ImportHelper
 
           column_type, limit = convert_mysql_column_type(type)
 
-          if field == 'id'
-            field = generate_id_field_name(table_name)
-          end
+          field = generate_id_field_name(table_name) if field == 'id'
 
-          column_definition = "      t.#{column_type.to_s} :#{field} "
+          column_definition = "      t.#{column_type} :#{field} "
           column_definition += ", limit: #{limit}" if limit
           column_definition += ", null: false" if null == "NO"
 
@@ -48,7 +46,6 @@ module ImportHelper
         end
         output_file.puts "    end"
         output_file.puts ""
-
       end
 
       output_file.close
@@ -56,23 +53,19 @@ module ImportHelper
     end
 
     def convert_mysql_column_type(t)
-      return [:integer, 8] if /bigint\(/.match(t)
-      return [:integer, nil] if /int\(/.match(t)
-      return [:boolean, nil] if /bit\(1\)/.match(t)
-      return [:datetime, nil] if /datetime/.match(t)
-      return [:timestamp, nil] if /timestamp/.match(t)
-      return [:text, nil] if /longtext/.match(t)
-      return [:float, nil] if /double/.match(t)
+      return [:integer, 8] if /bigint\(/.match?(t)
+      return [:integer, nil] if /int\(/.match?(t)
+      return [:boolean, nil] if /bit\(1\)/.match?(t)
+      return [:datetime, nil] if /datetime/.match?(t)
+      return [:timestamp, nil] if /timestamp/.match?(t)
+      return [:text, nil] if /longtext/.match?(t)
+      return [:float, nil] if /double/.match?(t)
 
       m = /varchar\((\d+)\)/.match(t)
-      if m.present?
-        return [:string, m[1].to_i]
-      end
+      return [:string, m[1].to_i] if m.present?
 
       m = /char\((\d+)\)/.match(t)
-      if m.present?
-        return [:string, m[1].to_i]
-      end
+      return [:string, m[1].to_i] if m.present?
 
       raise "unable to find type for #{t}"
     end
@@ -82,15 +75,15 @@ module ImportHelper
     end
 
     def import_mysql_data(prefix, namespace)
-      db_conn_hash = {    host:     ENV["#{namespace.upcase}_MYSQL_HOST"],
-                          port:     ENV["#{namespace.upcase}_MYSQL_PORT"],
+      db_conn_hash = {    host: ENV["#{namespace.upcase}_MYSQL_HOST"],
+                          port: ENV["#{namespace.upcase}_MYSQL_PORT"],
                           database: ENV["#{namespace.upcase}_MYSQL_DB"],
                           username: ENV["#{namespace.upcase}_MYSQL_UID"],
                           password: ENV["#{namespace.upcase}_MYSQL_PWD"],
-                          adapter:  'mysql2',
+                          adapter: 'mysql2',
                           encoding: 'utf8',
-                          pool:     5,
-                          timeout:  5000 }
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -109,20 +102,18 @@ module ImportHelper
         log "Importing mysql table #{table_name}"
         import_mysql_table(prefix, table_name, namespace)
       end
-
     end
 
-
     def export_legacy_mysql_data(prefix, export_folder)
-      db_conn_hash = {    host:     ENV["LEGACY_MYSQL_HOST"],
-                          port:     ENV["LEGACY_MYSQL_PORT"],
+      db_conn_hash = {    host: ENV["LEGACY_MYSQL_HOST"],
+                          port: ENV["LEGACY_MYSQL_PORT"],
                           database: ENV["LEGACY_MYSQL_DB"],
                           username: ENV["LEGACY_MYSQL_UID"],
                           password: ENV["LEGACY_MYSQL_PWD"],
-                          adapter:  'mysql2',
+                          adapter: 'mysql2',
                           encoding: 'utf8',
-                          pool:     5,
-                          timeout:  5000 }
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -140,19 +131,18 @@ module ImportHelper
       table_names.each do |table_name|
         export_legacy_mysql_table(table_name, export_folder)
       end
-
     end
 
     def export_legacy_mysql_table(mysql_table_name, export_folder)
-      db_conn_hash = {    host:     ENV["LEGACY_MYSQL_HOST"],
-                          port:     ENV["LEGACY_MYSQL_PORT"],
+      db_conn_hash = {    host: ENV["LEGACY_MYSQL_HOST"],
+                          port: ENV["LEGACY_MYSQL_PORT"],
                           database: ENV["LEGACY_MYSQL_DB"],
                           username: ENV["LEGACY_MYSQL_UID"],
                           password: ENV["LEGACY_MYSQL_PWD"],
-                          adapter:  'mysql2',
+                          adapter: 'mysql2',
                           encoding: 'utf8',
-                          pool:     5,
-                          timeout:  5000 }
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -165,14 +155,12 @@ module ImportHelper
       row_results = connection.select_all("SELECT * FROM #{mysql_table_name};")
 
       CSV.open(csv_file_path, "wb") do |csv|
-        if row_results.count > 0
-          csv << row_results.first.keys
-        end
+        csv << row_results.first.keys if row_results.count > 0
         n = 0
         row_results.each do |row|
           csv << row.values
-          n = n + 1
-          log("Exported #{n} rows.") if n % 10000 == 0
+          n += 1
+          log("Exported #{n} rows.") if n % 10_000 == 0
         end
       end
 
@@ -185,7 +173,7 @@ module ImportHelper
       institution_id = Institution.get_id_from_code(institution_code)
       class_name = target_model.constantize
       has_institution_id = class_name.has_attribute?('institution_id')
-      batch_size = 10000
+      batch_size = 10_000
 
       if has_institution_id
         class_name.where(is_legacy: true, institution_id: institution_id).delete_all
@@ -202,44 +190,21 @@ module ImportHelper
 
       records = []
       n_errors = 0
-      csv.drop(1).each_with_index do |row, n|
+      csv.drop(1).each_with_index do |row, _n|
         if n_errors >= 100
           log "Too may errors #{n_errors}, exiting!"
           records = []
           break
         end
         z = {}
-        z.merge!(is_legacy: true)
-        z.merge!(institution_id: institution_id) if has_institution_id
-        headers.each_with_index do |k,i| 
+        z[:is_legacy] = true
+        z[:institution_id] = institution_id if has_institution_id
+        headers.each_with_index do |k, i|
           z[k.underscore.to_sym] = row[i] if k != 'id' && class_name.has_attribute?(k.underscore)
         end
         records << class_name.new(z)
 
-        if records.size >= batch_size
-          success = false
-          begin
-            class_name.import records
-            log "Imported #{records.size} records into #{target_model}"
-            records = []
-            success = true
-          rescue => ex
-            log "Error => #{ex.message}"
-          end
-
-          if !success
-            log "Switching to individual mode"
-            records.each do |record|
-              unless record.save
-                log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(", ")}"
-              end
-            end
-            records = []
-          end
-        end
-
-      end
-      if records.size > 0
+        next unless records.size >= batch_size
         success = false
         begin
           class_name.import records
@@ -250,12 +215,28 @@ module ImportHelper
           log "Error => #{ex.message}"
         end
 
-        if !success
+        next if success
+        log "Switching to individual mode"
+        records.each do |record|
+          log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(', ')}" unless record.save
+        end
+        records = []
+      end
+      unless records.empty?
+        success = false
+        begin
+          class_name.import records
+          log "Imported #{records.size} records into #{target_model}"
+          records = []
+          success = true
+        rescue => ex
+          log "Error => #{ex.message}"
+        end
+
+        unless success
           log "Switching to individual mode"
           records.each do |record|
-            unless record.save
-              log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(", ")}"
-            end
+            log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(', ')}" unless record.save
           end
           records = []
         end
@@ -265,19 +246,19 @@ module ImportHelper
       log "#{n_errors} errors with #{target_model}" if n_errors > 0
       log "Finished importing #{target_model}"
 
-      return true
+      true
     end
 
     def import_mysql_table(prefix, table_name, namespace)
-      db_conn_hash = {    host:     ENV["LEGACY_MYSQL_HOST"],
-                          port:     ENV["LEGACY_MYSQL_PORT"],
+      db_conn_hash = {    host: ENV["LEGACY_MYSQL_HOST"],
+                          port: ENV["LEGACY_MYSQL_PORT"],
                           database: ENV["LEGACY_MYSQL_DB"],
                           username: ENV["LEGACY_MYSQL_UID"],
                           password: ENV["LEGACY_MYSQL_PWD"],
-                          adapter:  'mysql2',
+                          adapter: 'mysql2',
                           encoding: 'utf8',
-                          pool:     5,
-                          timeout:  5000 }
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -298,7 +279,7 @@ module ImportHelper
 
       connection.close
 
-      app_db = YAML.load_file(ERB.new(File.join(Rails.root, "config", "database.yml")).result)[Rails.env.to_s] 
+      app_db = YAML.load_file(ERB.new(File.join(Rails.root, "config", "database.yml")).result)[Rails.env.to_s]
       connection = ActiveRecord::Base.establish_connection(app_db).connection
 
       class_name = "#{namespace.classify}::#{table_name[prefix.length..-1].singularize.classify}".constantize
@@ -309,26 +290,25 @@ module ImportHelper
 
       records = []
       n_errors = 0
-      csv.drop(1).each_with_index do |row, n|
+      csv.drop(1).each_with_index do |row, _n|
         if n_errors >= 100
           log "Too may errors #{n_errors}, exiting!"
           records = []
           break
         end
         z = {}
-        headers.each_with_index do |k,i| 
+        headers.each_with_index do |k, i|
           v = row[i]
           z[k.underscore.to_sym] = v
         end
         records << class_name.new(z)
 
-        if records.size >= 10000
-          class_name.import records
-          log "Imported #{records.size} records from #{table_name}"
-          records = []
-        end
+        next unless records.size >= 10_000
+        class_name.import records
+        log "Imported #{records.size} records from #{table_name}"
+        records = []
       end
-      if records.size > 0
+      unless records.empty?
         class_name.import records
         log "Imported #{records.size} records from #{table_name}"
       end
@@ -338,9 +318,8 @@ module ImportHelper
       connection.close
     end
 
-
     def log(m)
-      puts "#{Time.now} - #{m}"
+      puts "#{Time.zone.now} - #{m}"
     end
 
     def convert_mssql_column_type(type_name, precision, scale)
@@ -349,7 +328,7 @@ module ImportHelper
       r_precision = nil
       r_scale = nil
 
-      if /int/.match(type_name)
+      if /int/.match?(type_name)
         r_column_type = :integer
       elsif /nvarchar/.match(type_name) || /varchar/.match(type_name)
         r_column_type = :string
@@ -357,12 +336,12 @@ module ImportHelper
       elsif /nchar/.match(type_name) || /char/.match(type_name)
         r_column_type = :string
         r_limit = precision
-      elsif /datetime/.match(type_name)
+      elsif /datetime/.match?(type_name)
         r_column_type = :datetime
-      elsif /varbinary/.match(type_name)
+      elsif /varbinary/.match?(type_name)
         r_column_type = :binary
         r_limit = precision
-      elsif /decimal/.match(type_name)
+      elsif /decimal/.match?(type_name)
         r_column_type = :decimal
         r_precision = precision
         r_scale = scale
@@ -370,18 +349,18 @@ module ImportHelper
         raise "unable to find type for #{type_name}"
       end
 
-      return [r_column_type, r_limit, r_precision, r_scale]
+      [r_column_type, r_limit, r_precision, r_scale]
     end
 
     def generate_mssql_migration(output_file_name, prefix, namespace)
-      db_conn_hash = {    host:     ENV["#{namespace.upcase}_MSSQL_HOST"],
-                          port:     ENV["#{namespace.upcase}_MSSQL_PORT"],
+      db_conn_hash = {    host: ENV["#{namespace.upcase}_MSSQL_HOST"],
+                          port: ENV["#{namespace.upcase}_MSSQL_PORT"],
                           database: ENV["#{namespace.upcase}_MSSQL_DB"],
                           username: ENV["#{namespace.upcase}_MSSQL_UID"],
                           password: ENV["#{namespace.upcase}_MSSQL_PWD"],
-                          adapter:  'sqlserver',
-                          pool:     5,
-                          timeout:  5000 }
+                          adapter: 'sqlserver',
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -397,23 +376,33 @@ module ImportHelper
 
         output_file.puts "    create_table :#{namespace}_#{table_name[prefix.length..-1].pluralize} do |t|"
         column_results.each do |cr|
-          column_name = cr["COLUMN_NAME"].downcase rescue ""
+          column_name = begin
+                          cr["COLUMN_NAME"].downcase
+                        rescue
+                          ""
+                        end
           precision = cr["PRECISION"]
           scale = cr["SCALE"]
           length = cr["LENGTH"]
-          type_name = cr["TYPE_NAME"].downcase rescue ""
+          type_name = begin
+                        cr["TYPE_NAME"].downcase
+                      rescue
+                        ""
+                      end
           is_nullable = cr["IS_NULLABLE"]
-          column_def = cr["COLUMN_DEF"].downcase rescue ""
+          column_def = begin
+                         cr["COLUMN_DEF"].downcase
+                       rescue
+                         ""
+                       end
 
           # puts "#{table_name} - #{column_name} - #{type_name} - length:#{length} - precision:#{precision} - scale: #{scale}"
 
           column_type, limit, precision, scale = convert_mssql_column_type(type_name, precision, scale)
 
-          if column_name == 'id'
-            column_name = generate_id_field_name(table_name)
-          end
+          column_name = generate_id_field_name(table_name) if column_name == 'id'
 
-          column_definition = "      t.#{column_type.to_s} :#{column_name} "
+          column_definition = "      t.#{column_type} :#{column_name} "
           column_definition += ", limit: #{limit}" if limit
           column_definition += ", precision: #{precision}" if precision
           column_definition += ", scale: #{scale}" if scale
@@ -422,7 +411,6 @@ module ImportHelper
           output_file.puts column_definition
         end
         output_file.puts ""
-
       end
 
       output_file.puts ""
@@ -431,14 +419,14 @@ module ImportHelper
     end
 
     def generate_mssql_definition(output_file_name, namespace)
-      db_conn_hash = {    host:     ENV["#{namespace.upcase}_MSSQL_HOST"],
-                          port:     ENV["#{namespace.upcase}_MSSQL_PORT"],
+      db_conn_hash = {    host: ENV["#{namespace.upcase}_MSSQL_HOST"],
+                          port: ENV["#{namespace.upcase}_MSSQL_PORT"],
                           database: ENV["#{namespace.upcase}_MSSQL_DB"],
                           username: ENV["#{namespace.upcase}_MSSQL_UID"],
                           password: ENV["#{namespace.upcase}_MSSQL_PWD"],
-                          adapter:  'sqlserver',
-                          pool:     5,
-                          timeout:  5000 }
+                          adapter: 'sqlserver',
+                          pool: 5,
+                          timeout: 5000 }
 
       connection = ActiveRecord::Base.establish_connection(db_conn_hash).connection
 
@@ -446,7 +434,7 @@ module ImportHelper
 
       output_file = File.open(output_file_path, "w")
 
-      output_file.puts "#{db_conn_hash[:database]}"
+      output_file.puts (db_conn_hash[:database]).to_s
 
       table_results = connection.select_all("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE';")
       table_results.each do |tr|
@@ -456,13 +444,25 @@ module ImportHelper
 
         column_results = connection.select_all("exec sp_columns #{table_name};")
         column_results.each do |cr|
-          column_name = cr["COLUMN_NAME"].downcase rescue ""
+          column_name = begin
+                          cr["COLUMN_NAME"].downcase
+                        rescue
+                          ""
+                        end
           precision = cr["PRECISION"]
           scale = cr["SCALE"]
           length = cr["LENGTH"]
-          type_name = cr["TYPE_NAME"].downcase rescue ""
+          type_name = begin
+                        cr["TYPE_NAME"].downcase
+                      rescue
+                        ""
+                      end
           is_nullable = cr["IS_NULLABLE"]
-          column_def = cr["COLUMN_DEF"].downcase rescue ""
+          column_def = begin
+                         cr["COLUMN_DEF"].downcase
+                       rescue
+                         ""
+                       end
 
           column_definition = "    #{column_name}"
           column_definition += ", #{type_name}" if type_name
@@ -475,13 +475,11 @@ module ImportHelper
         end
         output_file.puts ""
         output_file.puts ""
-
       end
 
       output_file.close
       log "Successfully finished generating schema into #{output_file_path}"
     end
-
 
     def audit_query_insitutition(folder_name, sequences_only = [])
       output_file_path = Rails.root.join('tmp', "#{folder_name}.sql").to_s
@@ -492,58 +490,52 @@ module ImportHelper
       output_file.close
 
       get_tasks_yamls(folder_name, sequences_only).each do |task|
-        puts "Running task: #{task["load_sequence"]}"
+        puts "Running task: #{task['load_sequence']}"
         task["output_file_path"] = output_file_path
         if task["adapter"] == "sqlserver"
-          break if !audit_query_mssql_table(task)
+          break unless audit_query_mssql_table(task)
         elsif task["adapter"] == "native_sql"
-          break if !audit_native_query(task)
+          break unless audit_native_query(task)
         end
       end
     end
 
     def import_institution(folder_name, test_mode = false, sequences_only = [])
       get_tasks_yamls(folder_name, sequences_only).each do |task|
-        puts "Running task: #{task["load_sequence"]}"
-        #TODO Add other types of load here as well, such as mysql, csv, etc.
+        puts "Running task: #{task['load_sequence']}"
+        # TODO: Add other types of load here as well, such as mysql, csv, etc.
         if task["adapter"] == "sqlserver"
-          break if !import_mssql_table(task, test_mode)
+          break unless import_mssql_table(task, test_mode)
         elsif task["adapter"] == "native_sql"
-          break if !execute_native_query(task)
+          break unless execute_native_query(task)
         elsif task["adapter"] == "csv"
-          break if !execute_csv_import(task, test_mode)
+          break unless execute_csv_import(task, test_mode)
         elsif task["adapter"] == "console_command"
-          break if !execute_console_command(task, test_mode)
+          break unless execute_console_command(task, test_mode)
         end
       end
     end
 
     def export_institution(folder_name, output_path, sequences_only = [])
       get_tasks_yamls(folder_name, sequences_only).each do |task|
-        puts "Running task: #{task["load_sequence"]}"
-        #TODO Add other types of load here as well, such as mysql
-        if task["adapter"] == "sqlserver"
-          export_from_mssql_table_to_csv(task, File.join(output_path, "#{task["target_model"]}.csv"))
-        end
+        puts "Running task: #{task['load_sequence']}"
+        # TODO: Add other types of load here as well, such as mysql
+        export_from_mssql_table_to_csv(task, File.join(output_path, "#{task['target_model']}.csv")) if task["adapter"] == "sqlserver"
       end
     end
 
     def get_tasks_yamls(folder_name, sequences_only = [])
       sequences_only = [sequences_only] unless sequences_only.is_a?(Array)
 
-      r = Rails.root.join('config','data_sources', folder_name)
+      r = Rails.root.join('config', 'data_sources', folder_name)
       global_params = {}
 
-      if File.exist?(r.join("global.yml"))
-        global_params = YAML.load_file(r.join("global.yml"))
-      end
+      global_params = YAML.load_file(r.join("global.yml")) if File.exist?(r.join("global.yml"))
 
       global_params.each do |k, v|
         next unless v.is_a?(String)
         m = v.match(/ENV\["([^\[\]"]*)"\]/)
-        if m.present?
-          global_params[k] = ENV[m[1]]
-        end
+        global_params[k] = ENV[m[1]] if m.present?
       end
 
       full_paths = Dir.glob(r.join("**", "*"))
@@ -560,7 +552,7 @@ module ImportHelper
         tasks << global_params.merge(table_params)
       end
 
-      tasks.sort_by!{|t| t["load_sequence"]}
+      tasks.sort_by! { |t| t["load_sequence"] }
     end
 
     def execute_native_query(params)
@@ -590,38 +582,38 @@ module ImportHelper
         ActiveRecord::Base.connection.execute(sql)
       end
 
-      return true
+      true
     end
 
     def import_mssql_table(params, test_mode = false)
-      csv_file_path =  Tempfile.new([params["target_model"],'.csv'], 'tmp').path
+      csv_file_path = Tempfile.new([params["target_model"], '.csv'], 'tmp').path
       export_from_mssql_table_to_csv(params, csv_file_path, test_mode)
       params["csv_file_path"] = csv_file_path
       params["bypass_validations"] = true
 
-      return import_csv(params, test_mode)
+      import_csv(params, test_mode)
     end
 
     def execute_csv_import(params, test_mode = false)
       params["csv_file_path"] = File.join(params["root_path"], params["file_name"])
 
-      return import_csv(params, test_mode)
+      import_csv(params, test_mode)
     end
 
-    def execute_console_command(params, test_mode)
+    def execute_console_command(params, _test_mode)
       cmds = params["commands"]
 
       cmds = [params["command"]] if cmds.blank?
 
       cmds.each do |cmd|
         puts "Executing: #{cmd}"
-        if ! system(cmd)
+        unless system(cmd)
           puts "Command Failed."
           return false
         end
       end
 
-      return true
+      true
     end
 
     def import_csv(params, test_mode = false)
@@ -632,7 +624,7 @@ module ImportHelper
       truncate_before_load = params["truncate_before_load"] == "yes"
       has_institution_id = class_name.has_attribute?('institution_id')
 
-      log "Has Institution [#{params["institution_code"]}] [#{institution_id}]." if has_institution_id
+      log "Has Institution [#{params['institution_code']}] [#{institution_id}]." if has_institution_id
 
       if truncate_before_load
         if has_institution_id
@@ -647,35 +639,35 @@ module ImportHelper
 
       headers = csv.first
 
-      batch_size = test_mode ? 100 : 10000
+      batch_size = test_mode ? 100 : 10_000
 
       records = []
       n_errors = 0
-      csv.drop(1).each_with_index do |row, n|
+      csv.drop(1).each_with_index do |row, _n|
         if n_errors >= 100
           log "Too may errors #{n_errors}, exiting!"
           records = []
           break
         end
         z = {}
-        z.merge!(institution_id: institution_id) if has_institution_id
-        headers.each_with_index do |k,i| 
+        z[:institution_id] = institution_id if has_institution_id
+        headers.each_with_index do |k, i|
           v = row[i]
-          #validations
+          # validations
           unless params["bypass_validations"]
             if class_name.columns_hash[k.underscore].type == :integer && !valid_integer?(v)
-              log "Invalid integer #{v} in #{row.join(",")}"
-              n_errors = n_errors + 1
+              log "Invalid integer #{v} in #{row.join(',')}"
+              n_errors += 1
               next
             end
             if class_name.columns_hash[k.underscore].type == :datetime && !valid_datetime?(v)
-              log "Invalid datetime #{v} in #{row.join(",")}"
-              n_errors = n_errors + 1
+              log "Invalid datetime #{v} in #{row.join(',')}"
+              n_errors += 1
               next
             end
             if class_name.columns_hash[k.underscore].type == :date && !valid_datetime?(v)
-              log "Invalid date #{v} in #{row.join(",")}"
-              n_errors = n_errors + 1
+              log "Invalid date #{v} in #{row.join(',')}"
+              n_errors += 1
               next
             end
           end
@@ -684,32 +676,7 @@ module ImportHelper
         end
         records << class_name.new(z)
 
-        if records.size >= batch_size
-          success = false
-          begin
-            class_name.import records
-            log "Imported #{records.size} records into #{target_model}"
-            records = []
-            success = true
-          rescue => ex
-            log "Error => #{ex.message}"
-          end
-
-          if !success
-            log "Switching to individual mode"
-            records.each do |record|
-              unless record.save
-                log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(", ")}"
-              end
-            end
-            records = []
-          end
-
-          break if test_mode
-        end
-
-      end
-      if records.size > 0
+        next unless records.size >= batch_size
         success = false
         begin
           class_name.import records
@@ -720,12 +687,31 @@ module ImportHelper
           log "Error => #{ex.message}"
         end
 
-        if !success
+        unless success
           log "Switching to individual mode"
           records.each do |record|
-            unless record.save
-              log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(", ")}"
-            end
+            log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(', ')}" unless record.save
+          end
+          records = []
+        end
+
+        break if test_mode
+      end
+      unless records.empty?
+        success = false
+        begin
+          class_name.import records
+          log "Imported #{records.size} records into #{target_model}"
+          records = []
+          success = true
+        rescue => ex
+          log "Error => #{ex.message}"
+        end
+
+        unless success
+          log "Switching to individual mode"
+          records.each do |record|
+            log "Failed saving #{record.inspect} error: #{records.errors.full_messages.join(', ')}" unless record.save
           end
           records = []
         end
@@ -735,16 +721,15 @@ module ImportHelper
       log "#{n_errors} errors with #{target_model}" if n_errors > 0
       log "Finished importing #{target_model}"
 
-      return true
+      true
     end
 
-  def export_from_mssql_table_to_csv(params, csv_file_path, test_mode = false)
-    mssql_helper = ImportHelper::Mssql.new(params, csv_file_path, test_mode)
-    mssql_helper.export_table_to_csv
-  end
+    def export_from_mssql_table_to_csv(params, csv_file_path, test_mode = false)
+      mssql_helper = ImportHelper::Mssql.new(params, csv_file_path, test_mode)
+      mssql_helper.export_table_to_csv
+    end
 
     def audit_query_mssql_table(params)
-
       output_file_path = params["output_file_path"]
       target_model = params["target_model"]
       filter = params["filter"]
@@ -755,8 +740,8 @@ module ImportHelper
 
       log "Started exporting #{target_model}"
 
-      sql =  " SELECT #{distinct ? "DISTINCT" : ""} " + select_sql + "\n" +
-             " FROM " + source_tables + "\n" +
+      sql =  " SELECT #{distinct ? 'DISTINCT' : ''} " + select_sql + "\n" \
+             " FROM " + source_tables + "\n" \
              " WHERE 1=1 " + "\n"
       sql += " AND (#{filter}) " + "\n" if filter.present?
       sql += " GROUP BY " + group_by_sql + "\n" if group_by_sql.present?
@@ -769,7 +754,7 @@ module ImportHelper
       output_file.puts "-----------------------------------------------------------------"
       output_file.close
 
-      return true
+      true
     end
 
     def audit_native_query(params)
@@ -794,23 +779,21 @@ module ImportHelper
 
       output_file.close
 
-      return true
+      true
     end
-
   end
 end
 
 def valid_integer?(v)
-  return v.blank? || v.match(/\A[+-]?\d+\z/).present?
+  v.blank? || v.match(/\A[+-]?\d+\z/).present?
 end
 
 def valid_datetime?(v)
   return true if v.blank?
   begin
-     DateTime.parse(v)
+    DateTime.parse(v)
   rescue ArgumentError
-     return false
+    return false
   end
-  return true
+  true
 end
-

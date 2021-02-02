@@ -1,7 +1,8 @@
+# frozen_string_literal: true
 ActiveAdmin.register Report::Template do
   actions :all
 
-  menu if: proc{ authorized?(:read, Report::Template) }, parent: I18n.t("phrases.reports")
+  menu if: proc { authorized?(:read, Report::Template) }, parent: I18n.t("phrases.reports")
 
   permit_params :name,
                 :comments,
@@ -17,8 +18,7 @@ ActiveAdmin.register Report::Template do
   preserve_default_filters!
   remove_filter :report_template_join_clauses
 
-
-  form partial:'form'
+  form partial: 'form'
 
   index download_links: [:csv] do
     column :name
@@ -67,7 +67,7 @@ ActiveAdmin.register Report::Template do
     column :name
     column(:select_section) { |template| template.select_section.join(" ") }
     column :from_section
-    column(:join_section) { |template| template.join_section }
+    column(:join_section, &:join_section)
     column :where_section
     column(:group_by_section) { |template| template.group_by_section.join(" ") }
     column :order_section

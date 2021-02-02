@@ -1,7 +1,8 @@
+# frozen_string_literal: true
 ActiveAdmin.register Log::JobExecutionStep do
   menu false
   actions :index, :show
-  
+
   index do
     column :job_execution_id
     column :step_name
@@ -10,7 +11,7 @@ ActiveAdmin.register Log::JobExecutionStep do
     column :status_set_at
     actions
   end
-  
+
   show do
     attributes_table do
       row :job_execution_id
@@ -19,9 +20,8 @@ ActiveAdmin.register Log::JobExecutionStep do
       row :started_at
       row :status
       row :status_set_at
-      row (:log_text) { |e| simple_format e.log_text }
+      row(:log_text) { |e| simple_format e.log_text }
     end
     active_admin_comments
   end
-
 end

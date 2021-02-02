@@ -1,15 +1,15 @@
+# frozen_string_literal: true
 module TableRetrieval
   def self.attributes(table_names)
     table_array = table_names.split(",")
     table_attributes = specific_table_attributes_map(table_array)
-    {table_attributes: table_attributes}
+    { table_attributes: table_attributes }
   end
 
   def self.all_tables
     all_table_attributes_map.keys.map(&:to_s)
   end
 
-  private
   def self.all_table_attributes_map
     Rails.cache.fetch("all_table_attributes_map", expires_in: 24.hours) do
       all_tables = ActiveRecord::Base.connection.tables.sort

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # from here: https://stackoverflow.com/a/15729440
 require 'active_record/connection_adapters/postgresql_adapter'
 module ActiveRecord

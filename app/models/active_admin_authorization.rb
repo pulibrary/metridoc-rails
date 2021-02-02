@@ -1,7 +1,6 @@
+# frozen_string_literal: true
 class ActiveAdminAuthorization < ActiveAdmin::AuthorizationAdapter
-
   def authorized?(action, subject = nil)
-    return user.authorized?(action, subject)
+    user.authorized?(action, subject)
   end
-
 end

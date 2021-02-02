@@ -1,8 +1,9 @@
+# frozen_string_literal: true
 ActiveAdmin.register Report::Query do
   actions :all
   skip_before_action :restrict_format_access!, only: [:show]
 
-  menu if: proc{ authorized?(:read, Report::Query) }, parent: I18n.t("phrases.reports")
+  menu if: proc { authorized?(:read, Report::Query) }, parent: I18n.t("phrases.reports")
 
   permit_params :name,
                 :full_sql,
@@ -20,40 +21,40 @@ ActiveAdmin.register Report::Query do
   preserve_default_filters!
   remove_filter :report_query_join_clauses
 
-  form partial:'form'
+  form partial: 'form'
 
   show do |report_query|
-      attributes_table do
-        row :name
-        row :comments
-        row :full_sql do
-          simple_format(report_query.full_sql) if report_query.full_sql.present?
-        end
-        row :report_template_id do
-          report_query.report_template.name if report_query.report_template_id.present?
-        end
-        row :owner do
-          report_query.owner.full_name if report_query.owner.present?
-        end
-        row :output_file_name do
-          report_query.output_file_name.present? ? link_to(I18n.t("phrases.download"), download_admin_report_query_path(report_query), target: '_blank') : "-"
-        end
-        row :progress do
-          "<div _report_query_id=#{report_query.id} >#{report_query.progress_text}</div>".html_safe
-        end
-        row :last_run_at do
-          report_query.last_run_at.blank? ? "-" : I18n.l(report_query.last_run_at)
-        end
-        row :status do
-          report_query.status.blank? ? I18n.t("phrases.report_query.statuses.pending") : I18n.t("phrases.report_query.statuses.#{report_query.status}")
-        end
-        row :last_error_message
+    attributes_table do
+      row :name
+      row :comments
+      row :full_sql do
+        simple_format(report_query.full_sql) if report_query.full_sql.present?
       end
+      row :report_template_id do
+        report_query.report_template.name if report_query.report_template_id.present?
+      end
+      row :owner do
+        report_query.owner.full_name if report_query.owner.present?
+      end
+      row :output_file_name do
+        report_query.output_file_name.present? ? link_to(I18n.t("phrases.download"), download_admin_report_query_path(report_query), target: '_blank', rel: 'noopener') : "-"
+      end
+      row :progress do
+        "<div _report_query_id=#{report_query.id} >#{report_query.progress_text}</div>".html_safe
+      end
+      row :last_run_at do
+        report_query.last_run_at.blank? ? "-" : I18n.l(report_query.last_run_at)
+      end
+      row :status do
+        report_query.status.blank? ? I18n.t("phrases.report_query.statuses.pending") : I18n.t("phrases.report_query.statuses.#{report_query.status}")
+      end
+      row :last_error_message
+    end
   end
 
   action_item I18n.t("phrases.process"),
               only: :show,
-              if: proc{ resource.status.in?(['success', 'failed', 'cancelled']) && current_admin_user.authorized?('read-write', Report) } do
+              if: proc { resource.status.in?(['success', 'failed', 'cancelled']) && current_admin_user.authorized?('read-write', Report) } do
     link_to I18n.t("phrases.process"), re_process_admin_report_query_path(report_query)
   end
 
@@ -138,7 +139,7 @@ ActiveAdmin.register Report::Query do
     column :report_template_id
     column(:select_section) { |template| template.select_section.join(" ") }
     column :from_section
-    column(:join_section) { |template| template.join_section }
+    column(:join_section, &:join_section)
     column :where_section
     column(:group_by_section) { |template| template.group_by_section.join(" ") }
     column :order_section

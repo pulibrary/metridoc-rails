@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 ActiveAdmin.setup do |config|
   # == Site Title
   #
@@ -199,8 +200,8 @@ ActiveAdmin.setup do |config|
   #   config.register_stylesheet 'my_print_stylesheet.css', media: :print
   #
   # To load a javascript file:
-    config.register_javascript 'report_template.js'
-    config.register_javascript 'report_query.js'
+  config.register_javascript 'report_template.js'
+  config.register_javascript 'report_query.js'
 
   # == CSV options
   #
@@ -293,12 +294,11 @@ ActiveAdmin.setup do |config|
   config.view_factory.footer = Footer
 
   config.namespace :admin do |admin|
-
     admin.build_menu :utility_navigation do |menu|
       user_menu = menu.add  label: proc { current_admin_user.full_name },
                             url: proc { edit_profile_admin_admin_users_url },
                             id: 'current_user',
-                            if:  proc { current_active_admin_user } # Check the permissions here
+                            if: proc { current_active_admin_user } # Check the permissions here
       admin.add_logout_button_to_menu user_menu, 100
     end
 
@@ -321,7 +321,6 @@ ActiveAdmin.setup do |config|
                   url: :admin_tutorials_path
       end
     end
-
   end
 
   # == Sorting

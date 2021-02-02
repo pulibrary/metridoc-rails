@@ -1,9 +1,9 @@
+# frozen_string_literal: true
 require '../../../app/models/log/job_execution.rb'
 require '../../../app/helpers/application_helper.rb'
 
 module Export
   module Mssql
-
     class Main
       def initialize(options = {})
         @options = options
@@ -24,7 +24,11 @@ module Export
 
       def test_mode?
         return @test_mode unless @test_mode.nil?
-        @test_mode = @options[:test_mode].upcase.strip == "TRUE" rescue false
+        @test_mode = begin
+                       @options[:test_mode].upcase.strip == "TRUE"
+                     rescue
+                       false
+                     end
       end
 
       def execute(sequences_only = [])
@@ -43,13 +47,13 @@ module Export
         end
 
         log_job_execution.set_status!('successful')
-        return true
+        true
       end
 
       def task_files(sequences_only = [])
         sequences_only = [sequences_only] if sequences_only.present? && !sequences_only.is_a?(Array)
 
-        full_paths = Dir[ File.join(root_path, "config", "data_sources", config_folder, "**", "*")]
+        full_paths = Dir[File.join(root_path, "config", "data_sources", config_folder, "**", "*")]
         tasks = []
         full_paths.each do |full_path|
           next if File.basename(full_path) == "global.yml"
@@ -59,42 +63,40 @@ module Export
 
           next if sequences_only.present? && !sequences_only.include?(seq)
 
-          tasks << {load_sequence: seq, full_path: full_path}
+          tasks << { load_sequence: seq, full_path: full_path }
         end
 
-        tasks.sort_by{|t| t[:load_sequence]}.map{|t| t[:full_path]}
+        tasks.sort_by { |t| t[:load_sequence] }.map { |t| t[:full_path] }
       end
 
       def global_config
-        return @global_params unless @global_params.blank?
+        return @global_params if @global_params.present?
 
         global_params = {}
 
         yml_path = File.join(root_path, "config", "data_sources", config_folder, "global.yml")
 
-        if File.exist?(yml_path)
-          global_params = YAML.load(ERB.new(File.read(yml_path)).result)
-        end
+        global_params = YAML.safe_load(ERB.new(File.read(yml_path)).result) if File.exist?(yml_path)
 
         @global_params = global_params.merge(@options.stringify_keys)
       end
 
       def db_opts
-        opts = {    host:     global_config["host"],
-                    port:     global_config["port"],
+        opts = {    host: global_config["host"],
+                    port: global_config["port"],
                     database: global_config["database"],
                     username: global_config["username"],
                     password: global_config["password"],
-                    adapter:  'sqlserver',
-                    pool:     5,
-                    timeout:  120000 }
+                    adapter: 'sqlserver',
+                    pool: 5,
+                    timeout: 120_000 }
       end
 
       def log_job_execution
         return @log_job_execution if @log_job_execution.present?
 
         environment = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
-        dbconfig = YAML.load(ERB.new(File.read(File.join(root_path, 'config', 'database.yml'))).result)
+        dbconfig = YAML.safe_load(ERB.new(File.read(File.join(root_path, 'config', 'database.yml'))).result)
 
         Log::JobExecution.establish_connection dbconfig[environment]
 
@@ -103,20 +105,16 @@ module Export
                                                         job_type: 'export',
                                                         global_yml: global_config,
                                                         mac_address: ApplicationHelper.mac_address,
-                                                        started_at: Time.now,
+                                                        started_at: Time.zone.now,
                                                         status: 'running'
                                                       )
       end
 
       def log(m)
-        log = "#{Time.now} - #{m}"
+        log = "#{Time.zone.now} - #{m}"
         log_job_execution.log_line(log)
         puts log
       end
-
     end
-
   end
 end
-
-

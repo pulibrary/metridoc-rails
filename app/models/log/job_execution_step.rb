@@ -1,6 +1,6 @@
+# frozen_string_literal: true
 module Log
-
-  class JobExecutionStep < ActiveRecord::Base
+  class JobExecutionStep < ApplicationRecord
     self.table_name_prefix = 'log_'
 
     before_validation :set_defaults
@@ -11,15 +11,15 @@ module Log
     end
 
     def log_line(line)
-      self.log_text = (self.log_text.present? ? self.log_text + "\n" : "") + line
+      self.log_text = (log_text.present? ? log_text + "\n" : "") + line
       save!
     end
 
     private
+
     def set_defaults
-      self.status_set_at = Time.now if status_changed?
-      step_yml.map{|key, val| step_yml[key] = ( key.match(/password/i) ? "[FILTERED]" : val) }
+      self.status_set_at = Time.zone.now if status_changed?
+      step_yml.map { |key, val| step_yml[key] = (/password/i.match?(key) ? "[FILTERED]" : val) }
     end
   end
-
 end

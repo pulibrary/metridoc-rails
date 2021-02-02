@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'pry'
 
@@ -12,7 +13,7 @@ Dir.glob("#{marc_files}/*.xml").each_with_index do |file, index|
   puts "#{file} processed."
 end
 
-Dir.glob("#{dest}/books_mods*.xml").each_with_index do |file, index|
+Dir.glob("#{dest}/books_mods*.xml").each_with_index do |file, _index|
   puts "loading #{file}..."
   FileUtils.mv(file, '/var/local/books_mods.xml')
   `rake import -c marc_xml`

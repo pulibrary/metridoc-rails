@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class Illiad::Base < ApplicationRecord
   belongs_to :institution
 
