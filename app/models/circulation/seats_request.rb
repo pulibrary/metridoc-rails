@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 class Circulation::SeatsRequest < Circulation::Base
   class << self
-    def gather_data(date_range: )
+    def gather_data(date_range:)
       values = Circulation::SeatsRequest.where(from: date_range).order(:location).group(:location).group(:status).group_by_day(:from).count
       combined_values = combine_values(values)
       combined_values.values.sort_by { |a| a[:name] }
@@ -11,9 +11,16 @@ class Circulation::SeatsRequest < Circulation::Base
       Circulation::SeatsRequest.where(from: date_range).order(:location).group(:location).group(:status).count
     end
 
-    def gather_tabular_data(date_range:)
-      values = Circulation::SeatsRequest.where(from: date_range).order(:location).group(:location).group(:status).group_by_week(:from, week_start: :monday).count
-      combine_tabular_values(values)      
+    def gather_tabular_data(previous_weeks: 1)
+      combined_values = {}
+      (1..previous_weeks).each do |week_ago|
+        date = week_ago.weeks.ago.beginning_of_week
+        date_range = week_ago.weeks.ago.beginning_of_week..week_ago.weeks.ago.end_of_week
+        values = Circulation::SeatsRequest.where(from: date_range).order(:location).group(:location).group(:status).pluck(:location, :status, Arel.sql("Count(status)"), Arel.sql("Count(checked_in)"), Arel.sql("Count(checked_out)"))
+
+        combined_values = combine_tabular_values(date: date, values: values, combined_values: combined_values)
+      end
+      combined_values
     end
 
     def colors_for_status_data(data:)
@@ -47,16 +54,20 @@ class Circulation::SeatsRequest < Circulation::Base
       combined_values
     end
 
-    def combine_tabular_values(values)
-      combined_values = {}
-      values.each do |key, value|
+    def combine_tabular_values(date:, values:, combined_values:)
+      values.each do |key|
         location = key[0]
         status = db_to_status(key[1])
-        day = key[2]
-        combined_values[day] ||= { }
-        combined_values[day][location] ||= { "Confirmed" => 0, "Cancelled" => 0  }
+        value = key[2]
+        checked_in = key[3]
+        checked_out = key[4]
+        day = date.to_date
+        combined_values[day] ||= {}
+        combined_values[day][location] ||= { "Confirmed" => 0, "Cancelled" => 0, "Checked In" => 0, "Checked Out" => 0 }
         current_value = combined_values[day][location][status] || 0
         combined_values[day][location][status] = current_value + value
+        combined_values[day][location]["Checked In"] += checked_in
+        combined_values[day][location]["Checked Out"] += checked_out
       end
       combined_values
     end
