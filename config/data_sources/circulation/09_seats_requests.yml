@@ -8,3 +8,5 @@ column_mappings:
   to: "%{to_date} %{to_time}"
   created: "%{created_date} %{created_time}"
   name: "%{space_seat_name}"
+  checked_in: "%{checked_in_at}"
+  checked_out: "%{checked_out_at}"

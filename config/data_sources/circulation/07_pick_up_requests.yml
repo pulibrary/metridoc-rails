@@ -10,4 +10,4 @@ column_mappings:
   received: "%{your_location_requests_received}"
   local_processed: "%{your_location_requests_processed_for_pickup}"
   offsite_processed: "%{re_cap_or_annex_reqs_processed_for_pickup}"
-  abandoned: "%{reshelved_or_returned_to_re_cap_annex_because_not_picked_up}"
+  abandoned: "%{reshelved_locally_or_returned_to_re_cap_annex_because_not_picked_up}"
