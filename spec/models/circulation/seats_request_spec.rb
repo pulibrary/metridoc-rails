@@ -71,5 +71,32 @@ RSpec.describe Circulation::SeatsRequest, type: :model do
       )
     end
   end
+
+  describe "#gather_tabular_data" do
+    it "writes no data for an empty range" do
+      expect(described_class.write_tabular_data(file_id: 'abc123')).to eq(true)
+    end
+
+    it "writes data for a range" do
+      described_class.create(from: two_weeks_ago, location: "Firestone", status: "Confirmed", checked_in: two_weeks_ago, checked_out: two_weeks_ago)
+      described_class.create(from: two_weeks_ago, location: "Lewis", status: "Confirmed")
+      described_class.create(from: a_week_ago, location: "Firestone", status: "Confirmed")
+      described_class.create(from: a_week_ago, location: "Firestone", status: "Confirmed", checked_in: a_week_ago)
+      described_class.create(from: a_week_ago, location: "Firestone", status: "Confirmed")
+      described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by User (Cancelled by Patron)")
+      described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by other")
+      described_class.create(from: a_week_ago, location: "Lewis", status: "Confirmed")
+      sheet = Circulation::GoogleSheet.new
+      sheet_data = [["Location", "Confirmed", "Cancelled", "Cancelled by Admin", "Checked In", "Checked Out", "Other"],
+                    [a_week_ago.to_date, "", "", "", "", ""],
+                    ["Firestone", 3, 1, 1, 1, 0],
+                    ["Lewis", 1, 0, 0, 0, 0],
+                    [two_weeks_ago.to_date, "", "", "", "", ""],
+                    ["Firestone", 1, 0, 0, 1, 1],
+                    ["Lewis", 1, 0, 0, 0, 0]]
+      expect(sheet).to receive(:add_data).with(file_id: 'abc123', data: sheet_data, range: 'Sheet1!A1:G7').and_return(true)
+      expect(described_class.write_tabular_data(file_id: 'abc123', previous_weeks: 2, sheet: sheet)).to eq(true)
+    end
+  end
 end
 # rubocop:enable RSpec/ExampleLength
