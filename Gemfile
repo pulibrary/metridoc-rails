@@ -29,39 +29,30 @@ gem 'jbuilder', '~> 2.5'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'mysql2'
-gem 'pg'
-
-gem 'makara', '~> 0.4.1'
-
-gem 'active_storage_validations'
-gem 'activerecord-import'
-
-gem 'activeadmin'
-gem 'devise'
-gem 'haml'
-
 gem 'active_admin_sidebar'
 gem 'active_material', github: 'vigetlabs/active_material'
-
 gem 'active_median'
+gem 'active_storage_validations'
+gem 'activeadmin'
+gem 'activerecord-import'
+gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
 gem 'chartkick'
-gem 'groupdate'
-
 gem 'chronic'
-
 gem 'daemons'
 gem 'delayed_job_active_record'
-
-gem 'google-api-client'
-gem 'rubyXL'
-
+gem 'devise'
 gem 'dotenv-rails'
-
-gem 'activerecord-sqlserver-adapter', '~> 5.2.0'
+gem 'google-api-client'
+gem 'groupdate'
+gem 'haml'
 gem "letter_opener"
+gem 'makara', '~> 0.4.1'
+gem 'mysql2'
+gem 'pg'
 gem 'rails_db'
+gem 'rubyXL'
 gem 'tiny_tds', '~> 2.1.0'
+gem 'whenever'
 
 group :development, :test do
   gem 'pry'
