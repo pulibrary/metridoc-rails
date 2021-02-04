@@ -2,7 +2,7 @@
 module Util
   class << self
     def valid_integer?(v)
-      v.blank? || v.match(/\A[+-]?\d+\.?0?\z/).present?
+      v.blank? || v.is_a?(Integer) || v.is_a?(Float) || v.match(/\A[+-]?\d+\.?0?\z/).present?
     end
 
     def valid_datetime?(v)
