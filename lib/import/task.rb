@@ -2,6 +2,7 @@
 require "csv"
 require 'chronic'
 
+# rubocop:disable Metrics/ClassLength
 module Import
   class Task
     HEADER_CONVERTER = ->(header) { Util.column_to_attribute(header).to_sym }
@@ -77,6 +78,8 @@ module Import
         return_value = execute_console_command
       elsif target_adapter == "google_sheet"
         return_value = import_google_sheet
+      elsif target_adapter == "google_csv"
+        return_value = import_google_csv
       else
         raise "Unsupported target_adapter type >> #{target_adapter}"
       end
@@ -178,89 +181,10 @@ module Import
       @csv_file_path ||= File.join(@main_driver.import_folder, import_file_name)
     end
 
-    def get_headers
-      csv = CSV.open(csv_file_path, { external_encoding: global_config['encoding'] || 'UTF-8', internal_encoding: 'UTF-8' })
-      columns = csv.readline
-      csv.close
-      headers = columns.map { |c| Util.column_to_attribute(c) }
-      headers.each do |column_name|
-        headers[headers.index(column_name)] = column_name.split(/\_+/).first if class_name.columns_hash[column_name].blank?
-      end
-      headers
-    end
-
     def import_csv
       Util.convert_to_utf8(csv_file_path)
-
-      headers = get_headers
-      warn_unmatched_headers(headers)
-
-      n_errors = 0
-      success = true
-      ActiveRecord::Base.transaction do
-        truncate if truncate_before_load?
-
-        records = []
-
-        csv = CSV.open(csv_file_path, headers: true, header_converters: HEADER_CONVERTER)
-
-        loop do
-          if n_errors >= max_errors
-            log "Too many errors #{n_errors}, exiting!"
-            records = []
-            success = false
-            break
-          end
-
-          row = csv.shift
-          break unless row
-
-          row_hash = row.to_h.transform_keys { |key| key.to_sym if key.present? }
-          next if row_hash.values.uniq.count == 0 && row_hash.values[0].blank?
-
-          row_error = false
-          attributes = {}
-
-          errors = column_mappings_to_attributes(headers: headers, attributes: attributes, row_hash: row_hash)
-          if errors.positive?
-            n_errors += errors
-            row_error = true
-          end
-
-          next if row_error
-
-          # puts "attributes=#{attributes.inspect}"
-          attributes[:institution_id] = institution_id if has_institution_id?
-          records << class_name.new(attributes)
-
-          if records.size >= batch_size
-            n_errors += import_records(records)
-            records = []
-          end
-
-        rescue CSV::MalformedCSVError => e
-          n_errors += 1
-          log "skipping bad row - MalformedCSVError: #{e.message}"
-        end # loop
-
-        csv.close
-
-        unless records.empty?
-          n_errors += import_records(records)
-          records = []
-        end
-
-        if n_errors >= max_errors
-          log "Too many errors #{n_errors}."
-          success = false
-        else
-          log "Finished importing #{class_name.model_name.human}."
-        end
-
-        raise ActiveRecord::Rollback, "Rolling back the upload." unless success
-      end # ActiveRecord::Base.transaction
-
-      success
+      csv = CSV.open(csv_file_path, headers: true, header_converters: HEADER_CONVERTER)
+      import_csv_data(csv)
     end
 
     def import_records(records)
@@ -352,6 +276,97 @@ module Import
 
   private
 
+    def import_google_csv
+      drive = @google_drive || Import::GoogleDrive.new
+      folder_id = task_config["folder_id"]
+      file_list = drive.list_files(folder_id: folder_id)
+      truncate_data = truncate_before_load?
+      file_list.files.each do |file|
+        if file.mime_type == "text/csv"
+          csv = drive.csv(file_id: file.id, header_converters: HEADER_CONVERTER)
+          if csv
+            import_csv_data(csv, truncate_data: truncate_data)
+          else
+            log "Failed opening workbook! File id: #{file.id}"
+          end
+        else
+          log "Skipping Non CSV file! File id: #{file.name}"
+        end
+        truncate_data = false # only truncate before the first file
+      end
+    end
+
+    def import_csv_data(csv, truncate_data: truncate_before_load?)
+      headers = csv.first.headers.map(&:to_s)
+      csv.rewind
+      warn_unmatched_headers(headers)
+
+      n_errors = 0
+      success = true
+      ActiveRecord::Base.transaction do
+        truncate if truncate_data
+
+        records = []
+
+        loop do
+          if n_errors >= max_errors
+            log "Too many errors #{n_errors}, exiting!"
+            records = []
+            success = false
+            break
+          end
+
+          row = csv.shift
+          break unless row
+
+          row_hash = row.to_h.transform_keys { |key| key.to_sym if key.present? }
+          next if row_hash.values.uniq.count == 0 && row_hash.values[0].blank?
+
+          row_error = false
+          attributes = {}
+
+          errors = column_mappings_to_attributes(headers: headers, attributes: attributes, row_hash: row_hash)
+          if errors.positive?
+            n_errors += errors
+            row_error = true
+          end
+
+          next if row_error
+
+          # puts "attributes=#{attributes.inspect}"
+          attributes[:institution_id] = institution_id if has_institution_id?
+          records << class_name.new(attributes)
+
+          if records.size >= batch_size
+            n_errors += import_records(records)
+            records = []
+          end
+
+        rescue CSV::MalformedCSVError => e
+          n_errors += 1
+          log "skipping bad row - MalformedCSVError: #{e.message}"
+        end # loop
+
+        csv.close
+
+        unless records.empty?
+          n_errors += import_records(records)
+          records = []
+        end
+
+        if n_errors >= max_errors
+          log "Too many errors #{n_errors}."
+          success = false
+        else
+          log "Finished importing #{class_name.model_name.human}."
+        end
+
+        raise ActiveRecord::Rollback, "Rolling back the upload." unless success
+      end # ActiveRecord::Base.transaction
+
+      success
+    end
+
     def import_google_sheet
       drive = @google_drive || Import::GoogleDrive.new
       file_id = task_config["file_id"]
@@ -363,13 +378,13 @@ module Import
       end
     end
 
-    def import_worksheet(worksheet)
+    def import_worksheet(worksheet, truncate_data: truncate_before_load?)
       headers = worksheet_headers(worksheet)
       warn_unmatched_headers(headers)
       n_errors = 0
       success = true
       ActiveRecord::Base.transaction do
-        truncate if truncate_before_load?
+        truncate if truncate_data
 
         records = []
 
@@ -466,7 +481,9 @@ module Import
     def worksheet_row_to_hash(row, headers)
       hash = {}
       headers.each_with_index do |header, idx|
-        hash[header.to_sym] = row[idx].value if row[idx].present?
+        hash[header.to_sym] = if row[idx].present?
+                                row[idx].value
+                              end
       end
       hash
     end
@@ -522,3 +539,4 @@ module Import
     end
   end # class Task
 end
+# rubocop:enable Metrics/ClassLength

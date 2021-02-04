@@ -1,0 +1,12 @@
+load_sequence:         10
+target_model:          "Circulation::SeatsRequest"
+target_adapter:        "google_csv"
+truncate_before_load:  "yes"
+folder_id:             <%= ENV["SEATS_FOLDER_ID"] %>
+column_mappings: 
+  from: "%{from_date} %{from_time}"
+  to: "%{to_date} %{to_time}"
+  created: "%{created_date} %{created_time}"
+  name: "%{space_seat_name}"
+  checked_in: "%{checked_in_at}"
+  checked_out: "%{checked_out_at}"

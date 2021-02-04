@@ -57,13 +57,13 @@ class Circulation::SeatsRequest < Circulation::Base
     def combine_tabular_values(date:, values:, combined_values:)
       values.each do |key|
         location = key[0]
-        status = db_to_status(key[1])
+        status = db_to_tabular_status(key[1])
         value = key[2]
         checked_in = key[3]
         checked_out = key[4]
         day = date.to_date
         combined_values[day] ||= {}
-        combined_values[day][location] ||= { "Confirmed" => 0, "Cancelled" => 0, "Checked In" => 0, "Checked Out" => 0 }
+        combined_values[day][location] ||= { "Confirmed" => 0, "Cancelled" => 0, "Cancelled by Admin" => 0, "Checked In" => 0, "Checked Out" => 0 }
         current_value = combined_values[day][location][status] || 0
         combined_values[day][location][status] = current_value + value
         combined_values[day][location]["Checked In"] += checked_in
@@ -75,6 +75,18 @@ class Circulation::SeatsRequest < Circulation::Base
     def db_to_status(db_status)
       if db_status.starts_with?("Cancelled")
         "Cancelled"
+      elsif db_status == "Mediated Approved"
+        "Confirmed"
+      else
+        db_status
+      end
+    end
+
+    def db_to_tabular_status(db_status)
+      if db_status == "Cancelled by User (Cancelled by Patron)"
+        "Cancelled"
+      elsif db_status.starts_with?("Cancelled")
+        "Cancelled by Admin"
       elsif db_status == "Mediated Approved"
         "Confirmed"
       else

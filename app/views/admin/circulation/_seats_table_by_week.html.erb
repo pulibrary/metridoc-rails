@@ -1,7 +1,7 @@
 <% seats_weeks_ago = 9 %>
 <h2>Seats Reservations By Week By Location </h2>
 <table class="seats">
-  <tr><th>Location</th><th>Confirmed Reservations</th><th>Canceled</th><th>Checked In</th><th>Checked Out<th></tr>
+  <tr><th>Location</th><th>Confirmed Reservations</th><th>Canceled</th><th>Canceled by Admin</th><th>Checked In</th><th>Checked Out<th></tr>
   <% Circulation::SeatsRequest.gather_tabular_data(previous_weeks: seats_weeks_ago).each do |key, location_data| %>
     <tr class="date"><td colspan="5">Week of <%= key %><td></tr>
     <% location_data.each do |location, statuses| %>
@@ -9,6 +9,7 @@
         <td><%= location %></td>
         <td><%=statuses["Confirmed"]%></td>
         <td><%=statuses["Cancelled"]%></td>
+        <td><%=statuses["Cancelled by Admin"]%></td>
         <td><%=statuses["Checked In"]%></td>
         <td><%=statuses["Checked Out"]%></td>
       </tr>

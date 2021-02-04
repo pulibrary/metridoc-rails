@@ -1,4 +1,4 @@
-load_sequence:         10
+load_sequence:         13
 target_model:          "Circulation::PickUpRequest"
 target_adapter:        "google_sheet"
 file_id:               <%= ENV["SPRING_STATS_FILE_ID"] %>
