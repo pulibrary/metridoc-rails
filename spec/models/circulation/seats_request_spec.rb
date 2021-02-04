@@ -62,12 +62,12 @@ RSpec.describe Circulation::SeatsRequest, type: :model do
       described_class.create(from: a_week_ago, location: "Firestone", status: "Confirmed")
       described_class.create(from: a_week_ago, location: "Firestone", status: "Confirmed", checked_in: a_week_ago)
       described_class.create(from: a_week_ago, location: "Firestone", status: "Confirmed")
-      described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by patron")
+      described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by User (Cancelled by Patron)")
       described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by other")
       described_class.create(from: a_week_ago, location: "Lewis", status: "Confirmed")
       expect(described_class.gather_tabular_data(previous_weeks: 2)).to eq(
-        { a_week_ago.to_date => { "Firestone" => { "Cancelled" => 2, "Confirmed" => 3, "Checked In" => 1, "Checked Out" => 0 }, "Lewis" => { "Cancelled" => 0, "Confirmed" => 1, "Checked In" => 0, "Checked Out" => 0 } },
-          two_weeks_ago.to_date => { "Firestone" => { "Cancelled" => 0, "Confirmed" => 1, "Checked In" => 1, "Checked Out" => 1 }, "Lewis" => { "Cancelled" => 0, "Confirmed" => 1, "Checked In" => 0, "Checked Out" => 0 } } }
+        { a_week_ago.to_date => { "Firestone" => { "Cancelled" => 1, "Cancelled by Admin" => 1, "Confirmed" => 3, "Checked In" => 1, "Checked Out" => 0 }, "Lewis" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 0, "Checked Out" => 0 } },
+          two_weeks_ago.to_date => { "Firestone" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 1, "Checked Out" => 1 }, "Lewis" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 0, "Checked Out" => 0 } } }
       )
     end
   end
