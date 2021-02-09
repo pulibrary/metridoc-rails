@@ -38,6 +38,21 @@ class Circulation::SeatsRequest < Circulation::Base
       color_for_location(location, color_idx: color_idx)
     end
 
+    def write_tabular_data(file_id:, sheet_name: 'Sheet1', previous_weeks: 10, sheet: Circulation::GoogleSheet.new)
+      data = gather_tabular_data(previous_weeks: previous_weeks)
+      return true if data.blank?
+
+      sheet_data = [["Location"] + data.values.first.values.first.keys + ['Other']]
+      data.each do |key, location_data|
+        sheet_data << [key, "", "", "", "", ""]
+        location_data.each do |location, statuses|
+          sheet_data << [location] + statuses.values
+        end
+      end
+      range = "#{sheet_name}!A1:#{convert_to_alpha(sheet_data.first.count)}#{sheet_data.count}"
+      sheet.add_data(file_id: file_id, data: sheet_data, range: range)
+    end
+
     private
 
     def combine_values(values)
@@ -92,6 +107,11 @@ class Circulation::SeatsRequest < Circulation::Base
       else
         db_status
       end
+    end
+
+    def convert_to_alpha(number)
+      @letter_array ||= ('A'..'ZZZ').to_a
+      @letter_array[number - 1]
     end
   end
 end
