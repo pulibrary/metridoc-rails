@@ -12,6 +12,7 @@ namespace "transfer_results" do
     end
     sheet_name = ENV["SEAT_SHEET_NAME"] || "Sheet1"
     previous_weeks = ENV["SEAT_PREVIOUS_WEEKS"] || 10
+    puts "file_id: #{file_id}, previous_weeks: #{previous_weeks.to_i}, sheet_name: #{sheet_name}"
     Circulation::SeatsRequest.write_tabular_data(file_id: file_id, previous_weeks: previous_weeks.to_i, sheet_name: sheet_name)
   end
 end

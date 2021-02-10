@@ -42,9 +42,9 @@ class Circulation::SeatsRequest < Circulation::Base
       data = gather_tabular_data(previous_weeks: previous_weeks)
       return true if data.blank?
 
-      sheet_data = [["Location"] + data.values.first.values.first.keys + ['Other']]
+      sheet_data = [["Location"] + data.values.first.values.first.keys]
       data.each do |key, location_data|
-        sheet_data << [key, "", "", "", "", ""]
+        sheet_data << [key, "", "", "", "", "", "", ""]
         location_data.each do |location, statuses|
           sheet_data << [location] + statuses.values
         end
@@ -70,21 +70,32 @@ class Circulation::SeatsRequest < Circulation::Base
     end
 
     def combine_tabular_values(date:, values:, combined_values:)
+      return combined_values if values.blank?
+      day = date.to_date
+      combined_values[day] = {}
       values.each do |key|
         location = key[0]
         status = db_to_tabular_status(key[1])
         value = key[2]
         checked_in = key[3]
         checked_out = key[4]
-        day = date.to_date
-        combined_values[day] ||= {}
-        combined_values[day][location] ||= { "Confirmed" => 0, "Cancelled" => 0, "Cancelled by Admin" => 0, "Checked In" => 0, "Checked Out" => 0 }
+        combined_values[day][location] ||= { "Confirmed" => 0, "Cancelled" => 0, "Cancelled by Admin" => 0, "Checked In" => 0, "Checked Out" => 0, "Other" => 0 }
         current_value = combined_values[day][location][status] || 0
         combined_values[day][location][status] = current_value + value
         combined_values[day][location]["Checked In"] += checked_in
         combined_values[day][location]["Checked Out"] += checked_out
       end
+      combined_values[day].each do |location, location_values|
+        location_values["% Checked In/Confirmed"] = percent_checked_in(checked_in: location_values["Checked In"], confirmed: location_values["Confirmed"])
+        combined_values[day][location] = location_values
+      end
       combined_values
+    end
+
+    def percent_checked_in(checked_in:, confirmed:)
+      return "0%" if confirmed.zero?
+      percent = (checked_in.to_f / confirmed) * 100
+      percent.to_i.to_s + '%'
     end
 
     def db_to_status(db_status)
@@ -104,6 +115,8 @@ class Circulation::SeatsRequest < Circulation::Base
         "Cancelled by Admin"
       elsif db_status == "Mediated Approved"
         "Confirmed"
+      elsif db_status != "Confirmed"
+        "Other"
       else
         db_status
       end

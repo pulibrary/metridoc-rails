@@ -66,13 +66,13 @@ RSpec.describe Circulation::SeatsRequest, type: :model do
       described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by other")
       described_class.create(from: a_week_ago, location: "Lewis", status: "Confirmed")
       expect(described_class.gather_tabular_data(previous_weeks: 2)).to eq(
-        { a_week_ago.to_date => { "Firestone" => { "Cancelled" => 1, "Cancelled by Admin" => 1, "Confirmed" => 3, "Checked In" => 1, "Checked Out" => 0 }, "Lewis" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 0, "Checked Out" => 0 } },
-          two_weeks_ago.to_date => { "Firestone" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 1, "Checked Out" => 1 }, "Lewis" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 0, "Checked Out" => 0 } } }
+        { a_week_ago.to_date => { "Firestone" => { "Cancelled" => 1, "Cancelled by Admin" => 1, "Confirmed" => 3, "Checked In" => 1, "% Checked In/Confirmed" => "33%", "Checked Out" => 0, "Other" => 0 }, "Lewis" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 0, "% Checked In/Confirmed" => "0%", "Checked Out" => 0, "Other" => 0 } },
+          two_weeks_ago.to_date => { "Firestone" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 1, "% Checked In/Confirmed" => "100%", "Checked Out" => 1, "Other" => 0 }, "Lewis" => { "Cancelled" => 0, "Cancelled by Admin" => 0, "Confirmed" => 1, "Checked In" => 0, "% Checked In/Confirmed" => "0%", "Checked Out" => 0, "Other" => 0 } } }
       )
     end
   end
 
-  describe "#gather_tabular_data" do
+  describe "#write_tabular_data" do
     it "writes no data for an empty range" do
       expect(described_class.write_tabular_data(file_id: 'abc123')).to eq(true)
     end
@@ -87,14 +87,14 @@ RSpec.describe Circulation::SeatsRequest, type: :model do
       described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by other")
       described_class.create(from: a_week_ago, location: "Lewis", status: "Confirmed")
       sheet = Circulation::GoogleSheet.new
-      sheet_data = [["Location", "Confirmed", "Cancelled", "Cancelled by Admin", "Checked In", "Checked Out", "Other"],
-                    [a_week_ago.to_date, "", "", "", "", ""],
-                    ["Firestone", 3, 1, 1, 1, 0],
-                    ["Lewis", 1, 0, 0, 0, 0],
-                    [two_weeks_ago.to_date, "", "", "", "", ""],
-                    ["Firestone", 1, 0, 0, 1, 1],
-                    ["Lewis", 1, 0, 0, 0, 0]]
-      expect(sheet).to receive(:add_data).with(file_id: 'abc123', data: sheet_data, range: 'Sheet1!A1:G7').and_return(true)
+      sheet_data = [["Location", "Confirmed", "Cancelled", "Cancelled by Admin", "Checked In", "Checked Out", "Other", "% Checked In/Confirmed"],
+                    [a_week_ago.to_date, "", "", "", "", "", "", ""],
+                    ["Firestone", 3, 1, 1, 1, 0, 0, "33%"],
+                    ["Lewis", 1, 0, 0, 0, 0, 0, "0%"],
+                    [two_weeks_ago.to_date, "", "", "", "", "", "", ""],
+                    ["Firestone", 1, 0, 0, 1, 1, 0, "100%"],
+                    ["Lewis", 1, 0, 0, 0, 0, 0, "0%"]]
+      expect(sheet).to receive(:add_data).with(file_id: 'abc123', data: sheet_data, range: 'Sheet1!A1:H7').and_return(true)
       expect(described_class.write_tabular_data(file_id: 'abc123', previous_weeks: 2, sheet: sheet)).to eq(true)
     end
   end
