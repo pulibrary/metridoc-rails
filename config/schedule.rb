@@ -22,3 +22,7 @@
 every '00 07 * * 1', roles: [:app] do
   rake "import -c circulation", output: "log/cron.log"
 end
+
+every '00 17 * * 1', roles: [:app] do
+  rake "transfer_results:seats"
+end
