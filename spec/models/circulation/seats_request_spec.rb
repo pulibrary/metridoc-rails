@@ -73,8 +73,17 @@ RSpec.describe Circulation::SeatsRequest, type: :model do
   end
 
   describe "#write_tabular_data" do
+    let(:sheet_service) { instance_double("Google::Apis::SheetsV4::SheetsService", authorization: auth) }
+    let(:auth) { instance_double("Signet::OAuth2::Client", fetch_access_token!: true) }
+    let(:file_id) { "1wNNrEVkDc6cLic7K6j5CYsQercm9vRMdQMY" }
+    let(:sheet) { Circulation::GoogleSheet.new(sheet_service: sheet_service, authorization: auth) }
+
+    before do
+      expect(sheet_service).to receive(:authorization=).with(auth)
+    end
+
     it "writes no data for an empty range" do
-      expect(described_class.write_tabular_data(file_id: 'abc123')).to eq(true)
+      expect(described_class.write_tabular_data(file_id: 'abc123', sheet: sheet)).to eq(true)
     end
 
     it "writes data for a range" do
@@ -86,7 +95,6 @@ RSpec.describe Circulation::SeatsRequest, type: :model do
       described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by User (Cancelled by Patron)")
       described_class.create(from: a_week_ago, location: "Firestone", status: "Cancelled by other")
       described_class.create(from: a_week_ago, location: "Lewis", status: "Confirmed")
-      sheet = Circulation::GoogleSheet.new
       sheet_data = [["Location", "Confirmed", "Cancelled", "Cancelled by Admin", "Checked In", "Checked Out", "Other", "% Checked In/Confirmed"],
                     [a_week_ago.to_date, "", "", "", "", "", "", ""],
                     ["Firestone", 3, 1, 1, 1, 0, 0, "33%"],

@@ -497,6 +497,7 @@ module Import
     end
 
     def convert_row_to_values(row)
+      return [] if row.blank?
       values = []
       (0..row.size - 1).each do |i|
         break if row[i].blank? || row[i].value.blank?
